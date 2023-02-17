@@ -1,2 +1,2 @@
-# Chat-
+# Chat 🐍
 Client-server interaction based chat
