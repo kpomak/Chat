@@ -12,18 +12,26 @@ def reply(message):
     return template_message(response=HTTPStatus.BAD_REQUEST, error=get_error())
 
 
-def run_server():
+def parse_parsms():
     params = sys.argv
+    port = int(params[params.index("-p") + 1]) if "-p" in params else DEFAULT_PORT
+    address = params[params.index("-a") + 1] if "-a" in params else ""
+    return address, port
+
+
+def init_socket():
+    sock = socket(AF_INET, SOCK_STREAM)
+    sock.bind(parse_parsms())
+    sock.listen(MAX_CONNECTIONS)
+    return sock
+
+
+def run_server():
     try:
-        port = int(params[params.index("-p") + 1]) if "-p" in params else DEFAULT_PORT
-        server_address = params[params.index("-a") + 1] if "-a" in params else ""
-        sock = socket(AF_INET, SOCK_STREAM)
-        sock.bind((server_address, port))
+        sock = init_socket()
     except Exception:
         print(get_error())
         sys.exit(1)
-
-    sock.listen(MAX_CONNECTIONS)
 
     while True:
         client, _ = sock.accept()

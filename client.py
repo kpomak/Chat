@@ -16,13 +16,22 @@ def presence():
     return template_message(action="presence", type="status", user=user)
 
 
-def run_client():
+def parse_params():
     params = sys.argv
+    port = int(params[2]) if len(params) > 2 else DEFAULT_PORT
+    address = params[1]
+    return address, port
+
+
+def connect_socket():
+    sock = socket(AF_INET, SOCK_STREAM)
+    sock.connect(parse_params())
+    return sock
+
+
+def run_client():
     try:
-        port = int(params[2]) if len(params) > 2 else DEFAULT_PORT
-        address = params[1]
-        sock = socket(AF_INET, SOCK_STREAM)
-        sock.connect((address, port))
+        sock = connect_socket()
     except Exception:
         print(get_error())
         sys.exit(1)
