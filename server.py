@@ -1,4 +1,5 @@
 import sys
+from http import HTTPStatus
 from socket import AF_INET, SOCK_STREAM, socket
 
 from config import DEFAULT_PORT, MAX_CONNECTIONS
@@ -7,8 +8,8 @@ from utils import get_message, send_message, template_message, get_error
 
 def reply(message):
     if "action" in message and "time" in message:
-        return template_message(response=200)
-    return template_message(response=400, error=get_error())
+        return template_message(response=HTTPStatus.OK, alert="OK")
+    return template_message(response=HTTPStatus.BAD_REQUEST, error=get_error())
 
 
 def run_server():
