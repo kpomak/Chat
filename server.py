@@ -12,7 +12,7 @@ def reply(message):
     return template_message(response=HTTPStatus.BAD_REQUEST, error=get_error())
 
 
-def parse_parsms():
+def parse_params():
     params = sys.argv
     port = int(params[params.index("-p") + 1]) if "-p" in params else DEFAULT_PORT
     address = params[params.index("-a") + 1] if "-a" in params else ""
@@ -21,7 +21,7 @@ def parse_parsms():
 
 def init_socket():
     sock = socket(AF_INET, SOCK_STREAM)
-    sock.bind(parse_parsms())
+    sock.bind(parse_params())
     sock.listen(MAX_CONNECTIONS)
     return sock
 
