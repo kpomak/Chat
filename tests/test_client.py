@@ -9,8 +9,8 @@ from socket import socket
 sys.path.append(os.getcwd())
 
 from config import DEFAULT_PORT
-from client import parse_message, parse_params, presence, connect_socket
-from server import init_socket
+from client import Client
+from server import Server
 
 TEST_PORT = 5000
 TEST_IP = "127.0.0.1"
@@ -19,11 +19,14 @@ TEST_IP = "127.0.0.1"
 class ClientTestCase(unittest.TestCase):
     def setUp(self):
         @patch("sys.argv", ["", TEST_IP])
-        def _connect_socket():
-            return connect_socket()
+        def _connect_socket(client):
+            return client.connect_socket()
 
-        self.server_sock = init_socket()
-        self.client_sock = _connect_socket()
+        self.server = Server()
+        self.client = Client()
+
+        self.server_sock = self.server.init_socket()
+        self.client_sock = _connect_socket(self.client)
 
     def tearDown(self):
         self.client_sock.close()
@@ -35,7 +38,7 @@ class ClientTestCase(unittest.TestCase):
             "alert": "OK",
         }
         self.assertEqual(
-            parse_message(message_ok),
+            self.client.parse_message(message_ok),
             "200: OK",
         )
 
@@ -45,7 +48,7 @@ class ClientTestCase(unittest.TestCase):
             "error": "BAD_REQUEST",
         }
         self.assertEqual(
-            parse_message(message_bad),
+            self.client.parse_message(message_bad),
             "400: BAD_REQUEST",
         )
 
@@ -59,15 +62,15 @@ class ClientTestCase(unittest.TestCase):
                 "status": "online",
             },
         }
-        self.assertEqual(presence(), message_presence)
+        self.assertEqual(self.client.presence(), message_presence)
 
     @patch("sys.argv", ["", TEST_IP, str(TEST_PORT)])
     def test_parse_params(self):
-        self.assertEqual(parse_params(), (TEST_IP, TEST_PORT))
+        self.assertEqual(self.client.parse_params(), (TEST_IP, TEST_PORT))
 
     @patch("sys.argv", ["", TEST_IP])
     def test_parse_params_no_port(self):
-        self.assertEqual(parse_params(), (TEST_IP, DEFAULT_PORT))
+        self.assertEqual(self.client.parse_params(), (TEST_IP, DEFAULT_PORT))
 
     @patch("sys.argv", ["", TEST_IP])
     def test_connect_socket(self):
