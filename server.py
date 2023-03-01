@@ -3,45 +3,49 @@ from http import HTTPStatus
 from socket import AF_INET, SOCK_STREAM, socket
 
 from config import DEFAULT_PORT, MAX_CONNECTIONS
-from utils import get_message, send_message, template_message, get_error
+from utils import Chat
 
 
-def reply(message):
-    if "action" in message and "time" in message:
-        return template_message(response=HTTPStatus.OK, alert="OK")
-    return template_message(response=HTTPStatus.BAD_REQUEST, error=get_error())
+class Server(Chat):
+    @classmethod
+    def reply(cls, message):
+        if "action" in message and "time" in message:
+            return cls.template_message(response=HTTPStatus.OK, alert="OK")
+        return cls.template_message(
+            response=HTTPStatus.BAD_REQUEST, error=cls.get_error()
+        )
 
+    @staticmethod
+    def parse_params():
+        params = sys.argv
+        port = int(params[params.index("-p") + 1]) if "-p" in params else DEFAULT_PORT
+        address = params[params.index("-a") + 1] if "-a" in params else ""
+        return address, port
 
-def parse_params():
-    params = sys.argv
-    port = int(params[params.index("-p") + 1]) if "-p" in params else DEFAULT_PORT
-    address = params[params.index("-a") + 1] if "-a" in params else ""
-    return address, port
+    @classmethod
+    def init_socket(cls):
+        sock = socket(AF_INET, SOCK_STREAM)
+        sock.bind(cls.parse_params())
+        sock.listen(MAX_CONNECTIONS)
+        return sock
 
+    def run(self):
+        try:
+            sock = self.init_socket()
+        except Exception:
+            print(self.get_error())
+            sys.exit(1)
 
-def init_socket():
-    sock = socket(AF_INET, SOCK_STREAM)
-    sock.bind(parse_params())
-    sock.listen(MAX_CONNECTIONS)
-    return sock
+        while True:
+            client, _ = sock.accept()
+            message = self.get_message(client)
+            print(message)
 
-
-def run_server():
-    try:
-        sock = init_socket()
-    except Exception:
-        print(get_error())
-        sys.exit(1)
-
-    while True:
-        client, _ = sock.accept()
-        message = get_message(client)
-        print(message)
-
-        response = reply(message)
-        send_message(client, response)
-        client.close()
+            response = self.reply(message)
+            self.send_message(client, response)
+            client.close()
 
 
 if __name__ == "__main__":
-    run_server()
+    server = Server()
+    server.run()
