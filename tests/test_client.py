@@ -8,7 +8,7 @@ from socket import socket
 
 sys.path.append(os.getcwd())
 
-from config import DEFAULT_PORT
+from app.config import DEFAULT_PORT
 from client import Client
 from server import Server
 
@@ -66,11 +66,11 @@ class ClientTestCase(unittest.TestCase):
 
     @patch("sys.argv", ["", TEST_IP, str(TEST_PORT)])
     def test_parse_params(self):
-        self.assertEqual(self.client.parse_params(), (TEST_IP, TEST_PORT))
+        self.assertEqual(self.client.parse_params, (TEST_IP, TEST_PORT))
 
     @patch("sys.argv", ["", TEST_IP])
     def test_parse_params_no_port(self):
-        self.assertEqual(self.client.parse_params(), (TEST_IP, DEFAULT_PORT))
+        self.assertEqual(self.client.parse_params, (TEST_IP, DEFAULT_PORT))
 
     @patch("sys.argv", ["", TEST_IP])
     def test_connect_socket(self):

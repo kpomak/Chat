@@ -2,8 +2,8 @@ import sys
 from http import HTTPStatus
 from socket import AF_INET, SOCK_STREAM, socket
 
-from config import DEFAULT_PORT, MAX_CONNECTIONS
-from utils import Chat
+from app.config import DEFAULT_PORT, MAX_CONNECTIONS
+from app.utils import Chat
 
 
 class Server(Chat):
@@ -15,17 +15,17 @@ class Server(Chat):
             response=HTTPStatus.BAD_REQUEST, error=cls.get_error()
         )
 
-    @staticmethod
-    def parse_params():
+    @property
+    def parse_params(self):
         params = sys.argv
         port = int(params[params.index("-p") + 1]) if "-p" in params else DEFAULT_PORT
         address = params[params.index("-a") + 1] if "-a" in params else ""
         return address, port
 
-    @classmethod
-    def init_socket(cls):
+    def init_socket(self):
         sock = socket(AF_INET, SOCK_STREAM)
-        sock.bind(cls.parse_params())
+        qwe = self.parse_params
+        sock.bind(self.parse_params)
         sock.listen(MAX_CONNECTIONS)
         return sock
 

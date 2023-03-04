@@ -8,7 +8,7 @@ from socket import socket
 
 sys.path.append(os.getcwd())
 
-from config import DEFAULT_PORT
+from app.config import DEFAULT_PORT
 from server import Server
 
 
@@ -41,18 +41,18 @@ class ServerTestCase(unittest.TestCase):
 
     @patch("sys.argv", ["", "-p", str(TEST_PORT), "-a", TEST_IP])
     def test_parse_params(self):
-        self.assertEqual(self.server.parse_params(), (TEST_IP, TEST_PORT))
+        self.assertEqual(self.server.parse_params, (TEST_IP, TEST_PORT))
 
     def test_parse_params_no_params(self):
-        self.assertEqual(self.server.parse_params(), ("", DEFAULT_PORT))
+        self.assertEqual(self.server.parse_params, ("", DEFAULT_PORT))
 
     @patch("sys.argv", ["", "-p", str(TEST_PORT)])
     def test_parse_params_no_address(self):
-        self.assertEqual(self.server.parse_params(), ("", TEST_PORT))
+        self.assertEqual(self.server.parse_params, ("", TEST_PORT))
 
     @patch("sys.argv", ["", "-a", TEST_IP])
     def test_parse_params_no_port(self):
-        self.assertEqual(self.server.parse_params(), (TEST_IP, DEFAULT_PORT))
+        self.assertEqual(self.server.parse_params, (TEST_IP, DEFAULT_PORT))
 
     def test_socket(self):
         self.assertIsInstance(self.sock, socket)

@@ -1,8 +1,8 @@
 import sys
 from socket import AF_INET, SOCK_STREAM, socket
 
-from config import DEFAULT_PORT
-from utils import Chat
+from app.config import DEFAULT_PORT
+from app.utils import Chat
 
 
 class Client(Chat):
@@ -17,17 +17,16 @@ class Client(Chat):
         user = {"account_name": "anonymous", "status": "online"}
         return cls.template_message(action="presence", type="status", user=user)
 
-    @staticmethod
-    def parse_params():
+    @property
+    def parse_params(self):
         params = sys.argv
         port = int(params[2]) if len(params) > 2 else DEFAULT_PORT
         address = params[1]
         return address, port
 
-    @classmethod
-    def connect_socket(cls):
+    def connect_socket(self):
         sock = socket(AF_INET, SOCK_STREAM)
-        address, port = cls.parse_params()
+        address, port = self.parse_params
         print()
         sock.connect((address, port))
         return sock

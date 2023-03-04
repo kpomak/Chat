@@ -1,7 +1,7 @@
 import json
 import random
 import time
-from config import MAX_PACKAGE_LENGTH, ENCODING, ERRORS
+from app.config import MAX_PACKAGE_LENGTH, ENCODING, ERRORS
 
 
 class Chat:

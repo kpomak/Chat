@@ -7,8 +7,8 @@ from unittest.mock import patch
 
 sys.path.append(os.getcwd())
 
-from config import ERRORS, ENCODING, MAX_PACKAGE_LENGTH
-from utils import Chat
+from app.config import ERRORS, ENCODING, MAX_PACKAGE_LENGTH
+from app.utils import Chat
 
 TEST_IP = "127.0.0.1"
 
