@@ -9,7 +9,7 @@ proxy = LoggerProxy("server")
 logger = proxy.get_logger(daily_rotation=True)
 
 if __name__ == "__main__":
-    logger.critical("Критическая ошибка")
-    logger.error("Ошибка")
-    logger.debug("Отладочная информация")
-    logger.info("Информационное сообщение")
+    logger.critical("Critical error")
+    logger.error("Error")
+    logger.debug("Debug information")
+    logger.info("Information")

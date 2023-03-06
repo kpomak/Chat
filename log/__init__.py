@@ -16,7 +16,7 @@ class LoggerProxy(Logger):
         if self.name in self.manager.loggerDict:
             return self.manager.loggerDict[self.name]
 
-        formatter = Formatter("%(asctime)s %(levelname)s %(module)s %(message)s")
+        formatter = Formatter("%(asctime)s [%(levelname)s] <<%(module)s>> %(message)s")
         log_file = os.path.join(os.getcwd(), "log", f"{self.name}.log")
 
         stream_handler = StreamHandler(sys.stderr)
@@ -27,7 +27,6 @@ class LoggerProxy(Logger):
         )
 
         logger = getLogger(self.name)
-        logger.addHandler(file_handler)
         logger.setLevel(INFO)
 
         for handler in (stream_handler, file_handler):
@@ -44,7 +43,7 @@ if __name__ == "__main__":
     logs = LoggerProxy("app")
     logs = logs.get_logger(True)
     assert chat_logger is logs
-    logs.critical("Критическая ошибка")
-    logs.error("Ошибка")
-    logs.debug("Отладочная информация")
-    logs.info("Информационное сообщение")
+    logs.critical("Critical error")
+    logs.error("Error")
+    logs.debug("Debug information")
+    logs.info("Information")

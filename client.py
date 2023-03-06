@@ -35,7 +35,7 @@ class Client(Chat):
         try:
             sock = self.connect_socket()
         except Exception:
-            print(self.get_error())
+            print(self.get_error)
             sys.exit(1)
 
         message = self.presence()

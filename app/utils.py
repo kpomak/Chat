@@ -22,6 +22,6 @@ class Chat:
             message[key] = value
         return message
 
-    @staticmethod
-    def get_error():
+    @property
+    def get_error(self):
         return random.choice(ERRORS)
