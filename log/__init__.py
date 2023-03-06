@@ -21,7 +21,7 @@ class LoggerProxy(Logger):
 
         stream_handler = StreamHandler(sys.stderr)
         file_handler = (
-            TimedRotatingFileHandler(log_file, encoding=ENCODING, interval=1, when="D")
+            TimedRotatingFileHandler(log_file, encoding=ENCODING, interval=1, when="d")
             if daily_rotation
             else FileHandler(log_file, encoding=ENCODING)
         )

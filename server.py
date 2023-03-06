@@ -10,7 +10,7 @@ from log.server_log_config import logger
 class Server(Chat):
     @classmethod
     def reply(cls, message):
-        logger.info(f"Parsing message and replying on: {message}")
+        logger.info(f"Replying on message: {message}")
         if "action" in message and "time" in message:
             return cls.template_message(response=HTTPStatus.OK, alert="OK")
         return cls.template_message(
