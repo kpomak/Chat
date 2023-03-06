@@ -5,8 +5,6 @@ MAX_PACKAGE_LENGTH = 2048
 
 ENCODING = "utf-8"
 
-LOG_LEVEL = "INFO"
-
 ERRORS = [
     "Your lack of attention to detail is so abysmal, you make a sloth look like a speed demon.",
     "Your incompetence knows no bounds. I'm surprised you can even breathe without help.",
