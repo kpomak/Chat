@@ -12,7 +12,7 @@ class LoggerProxy(Logger):
     def __init__(self, *args, **kwagrs):
         super().__init__(*args, **kwagrs)
 
-    def get_logger(self, daily_rotation: bool):
+    def get_logger(self, daily_rotation: bool = False):
         if self.name in self.manager.loggerDict:
             return self.manager.loggerDict[self.name]
 
@@ -38,7 +38,6 @@ class LoggerProxy(Logger):
         return logger
 
 
-# отладка
 if __name__ == "__main__":
     app = LoggerProxy("app", INFO)
     chat_logger = app.get_logger(False)
