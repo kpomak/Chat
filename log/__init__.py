@@ -9,9 +9,6 @@ from app.config import ENCODING
 
 
 class LoggerProxy(Logger):
-    def __init__(self, *args, **kwagrs):
-        super().__init__(*args, **kwagrs)
-
     def get_logger(self, daily_rotation: bool = False):
         if self.name in self.manager.loggerDict:
             return self.manager.loggerDict[self.name]
