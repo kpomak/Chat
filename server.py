@@ -4,7 +4,7 @@ from socket import AF_INET, SOCK_STREAM, socket
 
 from app.config import DEFAULT_PORT, MAX_CONNECTIONS
 from app.utils import Chat
-from log.server_log_config import logger
+from log.settings.server_log_config import logger
 
 
 class Server(Chat):

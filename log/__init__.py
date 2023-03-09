@@ -13,8 +13,10 @@ class LoggerProxy(Logger):
         if self.name in self.manager.loggerDict:
             return self.manager.loggerDict[self.name]
 
-        formatter = Formatter("%(asctime)s [%(levelname)s] <<%(module)s>> %(message)s")
-        log_file = os.path.join(os.getcwd(), "log", f"{self.name}.log")
+        formatter = Formatter(
+            "%(asctime)s :: [%(levelname)s] :: <<%(module)s>> :: %(message)s"
+        )
+        log_file = os.path.join(os.getcwd(), "log", "logs", f"{self.name}.log")
 
         stream_handler = StreamHandler(sys.stderr)
         file_handler = (

@@ -3,7 +3,7 @@ from socket import AF_INET, SOCK_STREAM, socket
 
 from app.config import DEFAULT_PORT
 from app.utils import Chat
-from log.client_log_config import logger
+from log.settings.client_log_config import logger
 
 
 class Client(Chat):
