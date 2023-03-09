@@ -1,7 +1,7 @@
 import json
 import random
 import time
-from config import MAX_PACKAGE_LENGTH, ENCODING, ERRORS
+from app.config import MAX_PACKAGE_LENGTH, ENCODING, ERRORS
 
 
 class Chat:
@@ -22,6 +22,6 @@ class Chat:
             message[key] = value
         return message
 
-    @staticmethod
-    def get_error():
+    @property
+    def get_error(self):
         return random.choice(ERRORS)

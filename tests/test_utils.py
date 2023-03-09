@@ -7,8 +7,8 @@ from unittest.mock import patch
 
 sys.path.append(os.getcwd())
 
-from config import ERRORS, ENCODING, MAX_PACKAGE_LENGTH
-from utils import Chat
+from app.config import ERRORS, ENCODING, MAX_PACKAGE_LENGTH
+from app.utils import Chat
 
 TEST_IP = "127.0.0.1"
 
@@ -32,7 +32,7 @@ class UtilsTestCase(unittest.TestCase):
         self.test_sock = TestSocket(self.message)
 
     def test_get_errors(self):
-        self.assertIn(self.chat.get_error(), ERRORS)
+        self.assertIn(self.chat.get_error, ERRORS)
 
     def test_template_message(self):
         self.assertEqual(self.chat.template_message(time=self.time), self.message)
