@@ -9,14 +9,21 @@ from app.config import ENCODING
 
 
 class LoggerProxy(Logger):
-    def get_logger(self, daily_rotation: bool = False):
+    def get_logger(self, daily_rotation=False, _formatter=None, path=None):
         if self.name in self.manager.loggerDict:
             return self.manager.loggerDict[self.name]
-
-        formatter = Formatter(
-            "%(asctime)s :: [%(levelname)s] :: <<%(module)s>> :: %(message)s"
+        formatter = (
+            Formatter("%(asctime)s :: [%(levelname)s] :: <<%(module)s>> :: %(message)s")
+            if not _formatter
+            else _formatter
         )
-        log_file = os.path.join(os.getcwd(), "log", "logs", f"{self.name}.log")
+
+        if not path:
+            log_file = os.path.join(os.getcwd(), "log", "logs", f"{self.name}.log")
+        else:
+            log_file = os.path.join(
+                os.getcwd(), "log", "logs", f"{self.name.split('.')[0]}.log"
+            )
 
         stream_handler = StreamHandler(sys.stderr)
         file_handler = (
@@ -36,6 +43,22 @@ class LoggerProxy(Logger):
         return logger
 
 
+class Log:
+    def __init__(self):
+        name = os.path.split(sys.argv[0])[-1]
+        proxy = LoggerProxy(name)
+        formatter = Formatter("%(asctime)s :: %(message)s")
+        self.logger = proxy.get_logger(_formatter=formatter, path=True)
+        self.logger.propagate = False
+
+    def __call__(self, func):
+        def wrapper(*args, **kwargs):
+            self.logger.info(func.__name__)
+            return func(*args, **kwargs)
+
+        return wrapper
+
+
 if __name__ == "__main__":
     app = LoggerProxy("app", INFO)
     chat_logger = app.get_logger(False)
@@ -46,3 +69,5 @@ if __name__ == "__main__":
     logs.error("Error")
     logs.debug("Debug information")
     logs.info("Information")
+    logger = Log()
+    logger(sum)([5, 3])

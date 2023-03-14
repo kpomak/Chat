@@ -4,10 +4,12 @@ from socket import AF_INET, SOCK_STREAM, socket
 from app.config import DEFAULT_PORT
 from app.utils import Chat
 from log.settings.client_log_config import logger
+from log import Log
 
 
 class Client(Chat):
     @staticmethod
+    @Log()
     def parse_message(message):
         logger.info(f"Parsing messagefrom server: {message}")
         if "response" in message and message["response"] < 300:
@@ -15,12 +17,14 @@ class Client(Chat):
         return f'{message["response"]}: {message["error"]}'
 
     @classmethod
+    @Log()
     def presence(cls):
         logger.info(f"Creating precense message")
         user = {"account_name": "anonymous", "status": "online"}
         return cls.template_message(action="presence", type="status", user=user)
 
     @property
+    @Log()
     def parse_params(self):
         params = sys.argv
         port = int(params[2]) if len(params) > 2 else DEFAULT_PORT
@@ -28,6 +32,7 @@ class Client(Chat):
         logger.info(f"Address: {address} and port: {port} from CLI")
         return address, port
 
+    @Log()
     def connect_socket(self):
         sock = socket(AF_INET, SOCK_STREAM)
         address, port = self.parse_params
@@ -36,6 +41,7 @@ class Client(Chat):
         logger.info(f"Connection to server {address}:{port} was succefully created")
         return sock
 
+    @Log()
     def run(self):
         try:
             sock = self.connect_socket()
