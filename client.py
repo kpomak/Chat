@@ -4,7 +4,7 @@ from socket import AF_INET, SOCK_STREAM, socket
 from app.config import DEFAULT_PORT
 from app.utils import Chat
 from log.settings.client_log_config import logger
-from log import Log
+from log.settings.decor_log_config import Log
 
 
 class Client(Chat):
