@@ -5,10 +5,12 @@ from socket import AF_INET, SOCK_STREAM, socket
 from app.config import DEFAULT_PORT, MAX_CONNECTIONS
 from app.utils import Chat
 from log.settings.server_log_config import logger
+from log.settings.decor_log_config import Log
 
 
 class Server(Chat):
     @classmethod
+    @Log()
     def reply(cls, message):
         logger.info(f"Replying on message: {message}")
         if "action" in message and "time" in message:
@@ -18,6 +20,7 @@ class Server(Chat):
         )
 
     @property
+    @Log()
     def parse_params(self):
         params = sys.argv
         port = int(params[params.index("-p") + 1]) if "-p" in params else DEFAULT_PORT
@@ -27,6 +30,7 @@ class Server(Chat):
         )
         return address, port
 
+    @Log()
     def init_socket(self):
         sock = socket(AF_INET, SOCK_STREAM)
         sock.bind(self.parse_params)
@@ -36,6 +40,7 @@ class Server(Chat):
         )
         return sock
 
+    @Log()
     def run(self):
         try:
             sock = self.init_socket()
