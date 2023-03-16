@@ -1,6 +1,7 @@
 import json
 import random
 import time
+from json.decoder import JSONDecodeError
 from app.config import MAX_PACKAGE_LENGTH, ENCODING, ERRORS
 
 
@@ -8,7 +9,11 @@ class Chat:
     @staticmethod
     def get_message(sock):
         response = sock.recv(MAX_PACKAGE_LENGTH).decode(ENCODING)
-        return json.loads(response)
+        try:
+            message = json.loads(response)
+        except JSONDecodeError:
+            message = "empty"
+        return message
 
     @staticmethod
     def send_message(sock, message):
