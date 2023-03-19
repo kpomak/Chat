@@ -63,7 +63,7 @@ class Client(Chat):
 if __name__ == "__main__":
     client = Client()
     client.run()
-    if "sent" in sys.argv:
+    if "send" in sys.argv:
         while message := input("Enter your message or Enter for exit: "):
             client.send_message(client.sock, message)
     else:
