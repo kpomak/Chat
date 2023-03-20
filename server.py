@@ -1,8 +1,9 @@
 import sys
 from http import HTTPStatus
 from socket import AF_INET, SOCK_STREAM, socket
+import select
 
-from app.config import DEFAULT_PORT, MAX_CONNECTIONS
+from app.config import TIMEOUT, DEFAULT_PORT, MAX_CONNECTIONS
 from app.utils import Chat
 from log.settings.server_log_config import logger
 from log.settings.decor_log_config import Log
@@ -34,6 +35,7 @@ class Server(Chat):
     def init_socket(self):
         sock = socket(AF_INET, SOCK_STREAM)
         sock.bind(self.parse_params)
+        sock.settimeout(TIMEOUT)
         sock.listen(MAX_CONNECTIONS)
         logger.info(
             f"Socket was succefully created with max average of connections: {MAX_CONNECTIONS}"
@@ -50,20 +52,38 @@ class Server(Chat):
             )
             sys.exit(1)
 
+        clients = {}
         while True:
-            client, addr = sock.accept()
-            logger.info(f"Connected client: {client} from address: {addr}")
-            message = self.get_message(client)
-            logger.info(f"Recieved message from client: {message}")
+            dispatcher = select.poll()
+            try:
+                client, addr = sock.accept()
+            except OSError:
+                pass
+            else:
+                logger.info(f"Connected client: {client} from address: {addr}")
+                clients[client.fileno()] = client
+            finally:
+                for fileno, client in clients.items():
+                    dispatcher.register(client, select.POLLIN)
+            events = dispatcher.poll(TIMEOUT)
 
-            response = self.reply(message)
-            logger.info(f"Created response on clients message: {response}")
-            self.send_message(client, response)
-            logger.info(f"Sent response: {response} to client: {client}")
-            client.close()
-            logger.info(
-                f"Connecttion with client: {client} by address: {addr} was closed"
-            )
+            for client, event in events:
+                if event & select.POLLIN:
+                    print(client, event)
+
+            # client, addr = sock.accept()
+            # logger.info(f"Connected client: {client} from address: {addr}")
+            # message = self.get_message(client)
+            # logger.info(f"Recieved message from client: {message}")
+
+            # response = self.reply(message)
+            # logger.info(f"Created response on clients message: {response}")
+            # self.send_message(client, response)
+            # logger.info(f"Sent response: {response} to client: {client}")
+            # client.close()
+            # logger.info(
+            #     f"Connecttion with client: {client} by address: {addr} was closed"
+            # )
 
 
 if __name__ == "__main__":

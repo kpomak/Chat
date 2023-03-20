@@ -6,7 +6,7 @@ MAX_PACKAGE_LENGTH = 2048
 ENCODING = "utf-8"
 
 WAIT = 5
-TIMEOUT = 0.2
+TIMEOUT = 5.0
 
 ERRORS = [
     "Your lack of attention to detail is so abysmal, you make a sloth look like a speed demon.",

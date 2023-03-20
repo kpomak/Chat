@@ -1,22 +1,29 @@
-from subprocess import Popen, CREATE_NEW_CONSOLE
+import os
+import signal
+from subprocess import Popen
 
 
 process_list = []
-print("Start 5 clients (start)\nClose all cliets (close)\nExit (anything)")
+print("Start 5 clients (s)\nClose all cliets (q)\nExit (anything)")
 
 while True:
     choise = input("Your choise: ")
     if choise == "start":
-        cmd = "python client.py 127.0.0.1"
+        cmd = [
+            "gnome-terminal",
+            "--disable-factory",
+            "--",
+            "python",
+            "./client.py",
+            "127.0.0.1",
+        ]
         for i in range(5):
             process_list.append(
-                Popen(
-                    cmd if i != 4 else cmd + " send", creationflags=CREATE_NEW_CONSOLE
-                )
+                Popen(cmd if i != 4 else cmd + ["send"], preexec_fn=os.setpgrp)
             )
     elif choise == "close":
         while process_list:
             process = process_list.pop()
-            process.kill()
+            os.killpg(process.pid, signal.SIGINT)
     else:
         break

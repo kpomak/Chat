@@ -52,12 +52,12 @@ class Client(Chat):
             )
             sys.exit(1)
 
-        message = self.presence()
-        logger.info(f"Created precense message: {message}")
-        self.send_message(self.sock, message)
-        logger.info(f"Sent message: {message} to server: {self.sock}")
-        response = self.parse_message(self.get_message(self.sock))
-        logger.info(f"Recieved response from server: {response}")
+        # message = self.presence()
+        # logger.info(f"Created precense message: {message}")
+        # self.send_message(self.sock, message)
+        # logger.info(f"Sent message: {message} to server: {self.sock}")
+        # response = self.parse_message(self.get_message(self.sock))
+        # logger.info(f"Recieved response from server: {response}")
 
 
 if __name__ == "__main__":
