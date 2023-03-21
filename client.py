@@ -12,6 +12,8 @@ class Client(Chat):
     @Log()
     def parse_message(message):
         logger.info(f"Parsing messagefrom server: {message}")
+        if "body" in message:
+            return f"{message['body']}"
         if "response" in message and message["response"] < 300:
             return f'{message["response"]}: {message["alert"]}'
         return f'{message["response"]}: {message["error"]}'
@@ -52,21 +54,22 @@ class Client(Chat):
             )
             sys.exit(1)
 
-        # message = self.presence()
-        # logger.info(f"Created precense message: {message}")
-        # self.send_message(self.sock, message)
-        # logger.info(f"Sent message: {message} to server: {self.sock}")
-        # response = self.parse_message(self.get_message(self.sock))
-        # logger.info(f"Recieved response from server: {response}")
-
 
 if __name__ == "__main__":
     client = Client()
     client.run()
     if "send" in sys.argv:
         while message := input("Enter your message or Enter for exit: "):
-            client.send_message(client.sock, message)
+            _message = client.template_message(body=message)
+            logger.info(f"Message {_message} was sent")
+            client.send_message(client.sock, _message)
     else:
-        while message := client.get_message(client.sock):
-            if message != "empty":
-                print(client.parse_message(message))
+        while True:
+            try:
+                message = client.get_message(client.sock)
+            except Exception:
+                logger.critical("Fatal error by recieving message")
+                sys.exit(1)
+            else:
+                logger.info(f"Recieved message {message}")
+                print(message["body"])

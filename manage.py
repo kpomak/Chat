@@ -3,12 +3,15 @@ import signal
 from subprocess import Popen
 
 
+CLIENTS_COUNT = 3
+
+
 process_list = []
-print("Start 5 clients (s)\nClose all cliets (q)\nExit (anything)")
+print(f"Start {CLIENTS_COUNT} clients (s)\nClose all cliets (q)\nExit (anything)")
 
 while True:
     choise = input("Your choise: ")
-    if choise == "start":
+    if choise == "s":
         cmd = [
             "gnome-terminal",
             "--disable-factory",
@@ -17,11 +20,14 @@ while True:
             "./client.py",
             "127.0.0.1",
         ]
-        for i in range(5):
+        for i in range(CLIENTS_COUNT):
             process_list.append(
-                Popen(cmd if i != 4 else cmd + ["send"], preexec_fn=os.setpgrp)
+                Popen(
+                    cmd if i != CLIENTS_COUNT - 1 else cmd + ["send"],
+                    preexec_fn=os.setpgrp,
+                )
             )
-    elif choise == "close":
+    elif choise == "q":
         while process_list:
             process = process_list.pop()
             os.killpg(process.pid, signal.SIGINT)
