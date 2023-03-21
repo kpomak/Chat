@@ -2,7 +2,6 @@ import os
 import signal
 from subprocess import Popen
 
-
 CLIENTS_COUNT = 3
 
 

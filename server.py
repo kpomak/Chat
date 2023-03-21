@@ -1,14 +1,13 @@
+import select
 import sys
+from collections import deque
 from http import HTTPStatus
 from socket import AF_INET, SOCK_STREAM, socket
-import select
-from collections import deque
 
-
-from app.config import TIMEOUT, DEFAULT_PORT, MAX_CONNECTIONS
+from app.config import DEFAULT_PORT, MAX_CONNECTIONS, TIMEOUT
 from app.utils import Chat
-from log.settings.server_log_config import logger
 from log.settings.decor_log_config import Log
+from log.settings.server_log_config import logger
 
 
 class Server(Chat):
