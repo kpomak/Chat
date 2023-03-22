@@ -1,22 +1,30 @@
+import select
 import sys
+from collections import deque
 from http import HTTPStatus
 from socket import AF_INET, SOCK_STREAM, socket
 
-from app.config import DEFAULT_PORT, MAX_CONNECTIONS
+from app.config import DEFAULT_PORT, MAX_CONNECTIONS, TIMEOUT
 from app.utils import Chat
-from log.settings.server_log_config import logger
 from log.settings.decor_log_config import Log
+from log.settings.server_log_config import logger
 
 
 class Server(Chat):
-    @classmethod
+    def __init__(self):
+        self.clients = {}
+        self.messages = deque()
+        self.dispatcher = select.poll()
+
     @Log()
-    def reply(cls, message):
+    def reply(self, message):
         logger.info(f"Replying on message: {message}")
+        if "body" in message:
+            return self.template_message(body=message["body"])
         if "action" in message and "time" in message:
-            return cls.template_message(response=HTTPStatus.OK, alert="OK")
-        return cls.template_message(
-            response=HTTPStatus.BAD_REQUEST, error=cls.get_error
+            return self.template_message(response=HTTPStatus.OK, alert="OK")
+        return self.template_message(
+            response=HTTPStatus.BAD_REQUEST, error=self.get_error
         )
 
     @property
@@ -34,11 +42,36 @@ class Server(Chat):
     def init_socket(self):
         sock = socket(AF_INET, SOCK_STREAM)
         sock.bind(self.parse_params)
+        sock.settimeout(TIMEOUT)
         sock.listen(MAX_CONNECTIONS)
         logger.info(
             f"Socket was succefully created with max average of connections: {MAX_CONNECTIONS}"
         )
         return sock
+
+    def check_messages(self, events):
+        for client, event in events:
+            if event & select.POLLIN:
+                try:
+                    message = self.get_message(self.clients[client])
+                except Exception:
+                    logger.info(f"Client {client} disconnected")
+                    self.dispatcher.unregister(self.clients[client])
+                    self.clients[client].close()
+                    del self.clients[client]
+                else:
+                    message["client"] = client
+                    logger.info(f"message {message} recieved from client {client}")
+                    self.messages.append(message)
+
+    def answer_on_messages(self, events):
+        while self.messages:
+            message = self.messages.popleft()
+            for client, event in events:
+                if event & select.POLLOUT and client != message["client"]:
+                    logger.info(f"Sending message {message} to client {client}")
+                    response = self.reply(message)
+                    self.send_message(self.clients[client], response)
 
     @Log()
     def run(self):
@@ -51,19 +84,20 @@ class Server(Chat):
             sys.exit(1)
 
         while True:
-            client, addr = sock.accept()
-            logger.info(f"Connected client: {client} from address: {addr}")
-            message = self.get_message(client)
-            logger.info(f"Recieved message from client: {message}")
-
-            response = self.reply(message)
-            logger.info(f"Created response on clients message: {response}")
-            self.send_message(client, response)
-            logger.info(f"Sent response: {response} to client: {client}")
-            client.close()
-            logger.info(
-                f"Connecttion with client: {client} by address: {addr} was closed"
-            )
+            try:
+                client, addr = sock.accept()
+            except OSError:
+                pass
+            else:
+                logger.info(f"Connected client: {client} from address: {addr}")
+                self.clients[client.fileno()] = client
+            finally:
+                for _, client in self.clients.items():
+                    self.dispatcher.register(client, select.POLLIN | select.POLLOUT)
+            events = self.dispatcher.poll(TIMEOUT)
+            if events:
+                self.answer_on_messages(events)
+                self.check_messages(events)
 
 
 if __name__ == "__main__":

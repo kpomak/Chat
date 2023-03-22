@@ -5,6 +5,8 @@ MAX_PACKAGE_LENGTH = 2048
 
 ENCODING = "utf-8"
 
+TIMEOUT = 1.0
+
 ERRORS = [
     "Your lack of attention to detail is so abysmal, you make a sloth look like a speed demon.",
     "Your incompetence knows no bounds. I'm surprised you can even breathe without help.",

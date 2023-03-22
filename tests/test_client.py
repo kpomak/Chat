@@ -53,16 +53,17 @@ class ClientTestCase(unittest.TestCase):
         )
 
     def test_presence(self):
-        message_presence = {
+        presence_message = self.client.presence()
+        test_message = {
             "action": "presence",
             "type": "status",
-            "time": time.time(),
+            "time": presence_message["time"],
             "user": {
                 "account_name": "anonymous",
                 "status": "online",
             },
         }
-        self.assertEqual(self.client.presence(), message_presence)
+        self.assertEqual(presence_message, test_message)
 
     @patch("sys.argv", ["", TEST_IP, str(TEST_PORT)])
     def test_parse_params(self):
