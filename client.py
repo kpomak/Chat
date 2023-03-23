@@ -1,4 +1,5 @@
 import sys
+import threading
 from socket import AF_INET, SOCK_STREAM, socket
 
 from app.config import DEFAULT_PORT
@@ -8,22 +9,32 @@ from log.settings.decor_log_config import Log
 
 
 class Client(Chat):
+    def __init__(self):
+        self.username = None
+
     @staticmethod
     @Log()
     def parse_message(message):
         logger.info(f"Parsing messagefrom server: {message}")
+
+        if "username" in message:
+            if message["username"] == "accepted":
+                return True
+            return False
+
         if "body" in message:
             return f"{message['body']}"
+
         if "response" in message and message["response"] < 300:
             return f'{message["response"]}: {message["alert"]}'
+
         return f'{message["response"]}: {message["error"]}'
 
-    @classmethod
     @Log()
-    def presence(cls):
+    def presence(self):
         logger.info(f"Creating precense message")
-        user = {"account_name": "anonymous", "status": "online"}
-        return cls.template_message(action="presence", type="status", user=user)
+        user = {"username": self.username, "status": "online"}
+        return self.template_message(action="presence", type="status", user=user)
 
     @property
     @Log()
@@ -54,22 +65,36 @@ class Client(Chat):
             )
             sys.exit(1)
 
+    def recieve_message(self):
+        try:
+            message = self.get_message(self.sock)
+        except Exception:
+            logger.critical("Fatal error by recieving message")
+            sys.exit(1)
+        else:
+            logger.info(f"Recieved message {message}")
+            return self.parse_message(message)
+
+    def set_username(self):
+        while not self.username:
+            self.username = input("Enter your username ")
+            message = self.presence()
+            message["action"] = "username"
+            self.send_message(self.sock, message)
+            if not self.recieve_message():
+                print(f"Sorry, username {self.username} is busy :(")
+                self.username = None
+
 
 if __name__ == "__main__":
     client = Client()
     client.run()
-    if "send" in sys.argv:
-        while message := input("Enter your message or Enter for exit: "):
-            _message = client.template_message(body=message)
-            logger.info(f"Message {_message} was sent")
-            client.send_message(client.sock, _message)
-    else:
-        while True:
-            try:
-                message = client.get_message(client.sock)
-            except Exception:
-                logger.critical("Fatal error by recieving message")
-                sys.exit(1)
-            else:
-                logger.info(f"Recieved message {message}")
-                print(message["body"])
+    client.set_username()
+    print(client.username)
+
+    # if "send" in sys.argv:
+    #     while message := input("Enter your message or Enter for exit: "):
+    #         _message = client.template_message(body=message)
+    #         logger.info(f"Message {_message} was sent")
+    #         client.send_message(client.sock, _message)
+    # else:
