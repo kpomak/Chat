@@ -22,7 +22,7 @@ while True:
         for i in range(CLIENTS_COUNT):
             process_list.append(
                 Popen(
-                    cmd if i != CLIENTS_COUNT - 1 else cmd + ["send"],
+                    cmd,
                     preexec_fn=os.setpgrp,
                 )
             )
