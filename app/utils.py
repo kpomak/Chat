@@ -19,7 +19,12 @@ class Users:
         return self.usernames_list
 
     def get_socket(self, username):
-        return self.sockets_list[self.usernames_list[username]]
+        return self.sockets_list.get(self.usernames_list.get(username))
+
+    def get_username(self, fileno):
+        for key, value in self.usernames_list.items():
+            if value == fileno:
+                return key
 
 
 class Chat:
@@ -34,7 +39,8 @@ class Chat:
         sock.send(message)
 
     @staticmethod
-    def template_message(action="msg", **kwargs):
+    def template_message(**kwargs):
+        action = kwargs["action"] if "action" in kwargs else "msg"
         message = {"action": action, "time": time.time()}
         for key, value in kwargs.items():
             message[key] = value

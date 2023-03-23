@@ -29,10 +29,11 @@ class ServerTestCase(unittest.TestCase):
             self.server.reply(self.server.template_message())["response"], HTTPStatus.OK
         )
 
-    def test_reply_no_action(self):
-        self.assertEqual(
-            self.server.reply({"time": time.time()})["response"], HTTPStatus.BAD_REQUEST
-        )
+    # deprecated
+    # def test_reply_no_action(self):
+    #     self.assertEqual(
+    #         self.server.reply({"time": time.time()})["response"], HTTPStatus.BAD_REQUEST
+    #     )
 
     def test_reply_no_time(self):
         self.assertEqual(

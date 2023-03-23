@@ -19,14 +19,40 @@ class Server(Chat):
     @Log()
     def reply(self, message):
         logger.info(f"Replying on message: {message}")
-
-        if "body" in message:
-            return self.template_message(body=message["body"])
-        if "action" in message and "time" in message:
-            return self.template_message(response=HTTPStatus.OK, alert="OK")
+        if "time" in message:
+            return self.template_message(
+                action="status code", response=HTTPStatus.OK, alert="OK"
+            )
         return self.template_message(
-            response=HTTPStatus.BAD_REQUEST, error=self.get_error
+            action="status code", response=HTTPStatus.BAD_REQUEST, error=self.get_error
         )
+
+    @Log()
+    def exchange_service(self, message, events):
+        logger.info(f"Exchange service for message: {message}")
+
+        # presence message
+        if message["action"] == "presence":
+            return message["client"], self.reply(message)
+
+        # sign up message
+        if message["action"] == "login":
+            username = message["user"].get("username")
+            response = self.template_message(
+                action="login",
+                username="accepted"
+                if username not in self.users.usernames
+                else "rejected",
+            )
+            self.users.usernames[username] = message["client"]
+            return message["client"], response
+
+        # commands
+        if message["action"] == "commands" and message["body"] == "/users_list":
+            response = self.template_message(
+                action="notification", response=list(self.users.usernames.keys())
+            )
+            return message["client"], response
 
     @property
     @Log()
@@ -68,17 +94,9 @@ class Server(Chat):
     def answer_on_messages(self, events):
         while self.messages:
             message = self.messages.popleft()
-            if "action" in message and message["action"] == "username":
-                username = message["user"].get("username")
-                response = self.template_message(
-                    username="accepted"
-                    if username not in self.users.usernames
-                    else "rejected"
-                )
-                self.users.usernames[username] = message["client"]
-            self.send_message(self.users.sockets[message["client"]], response)
-
-            # response = self.reply(message)
+            if "action" in message:
+                client, response = self.exchange_service(message, events)
+                self.send_message(self.users.sockets[client], response)
 
             # for client, event in events:
             #     if event & select.POLLOUT:

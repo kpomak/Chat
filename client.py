@@ -17,10 +17,13 @@ class Client(Chat):
     def parse_message(message):
         logger.info(f"Parsing messagefrom server: {message}")
 
-        if "username" in message:
+        if message["action"] == "login":
             if message["username"] == "accepted":
                 return True
             return False
+
+        if message["action"] == "notification":
+            return f'{message["response"]}'
 
         if "body" in message:
             return f"{message['body']}"
@@ -31,10 +34,15 @@ class Client(Chat):
         return f'{message["response"]}: {message["error"]}'
 
     @Log()
+    def create_message(self, **kwargs):
+        user = {"username": self.username, "status": "online"}
+        logger.info(f"Creating message from user {user['username']}")
+        return self.template_message(type="status", user=user, **kwargs)
+
+    @Log()
     def presence(self):
         logger.info(f"Creating precense message")
-        user = {"username": self.username, "status": "online"}
-        return self.template_message(action="presence", type="status", user=user)
+        return self.create_message(action="presence")
 
     @property
     @Log()
@@ -79,7 +87,7 @@ class Client(Chat):
         while not self.username:
             self.username = input("Enter your username ")
             message = self.presence()
-            message["action"] = "username"
+            message["action"] = "login"
             self.send_message(self.sock, message)
             if not self.recieve_message():
                 print(f"Sorry, username {self.username} is busy :(")
@@ -90,6 +98,12 @@ if __name__ == "__main__":
     client = Client()
     client.run()
     client.set_username()
+    client.send_message(client.sock, client.presence())
+    client.recieve_message()
+    client.send_message(
+        client.sock, client.create_message(action="commands", body="/users_list")
+    )
+    client.recieve_message()
     print(client.username)
 
     # if "send" in sys.argv:

@@ -59,7 +59,7 @@ class ClientTestCase(unittest.TestCase):
             "type": "status",
             "time": presence_message["time"],
             "user": {
-                "account_name": "anonymous",
+                "username": None,
                 "status": "online",
             },
         }
