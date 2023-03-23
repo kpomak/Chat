@@ -5,15 +5,14 @@ from http import HTTPStatus
 from socket import AF_INET, SOCK_STREAM, socket
 
 from app.config import DEFAULT_PORT, MAX_CONNECTIONS, TIMEOUT
-from app.utils import Chat
+from app.utils import Chat, Users
 from log.settings.decor_log_config import Log
 from log.settings.server_log_config import logger
 
 
 class Server(Chat):
     def __init__(self):
-        self.clients = {}
-        self.users = {"admin": 1}
+        self.users = Users()
         self.messages = deque()
         self.dispatcher = select.poll()
 
@@ -55,12 +54,12 @@ class Server(Chat):
         for client, event in events:
             if event & select.POLLIN:
                 try:
-                    message = self.get_message(self.clients[client])
+                    message = self.get_message(self.users.sockets[client])
                 except Exception:
                     logger.info(f"Client {client} disconnected")
-                    self.dispatcher.unregister(self.clients[client])
-                    self.clients[client].close()
-                    del self.clients[client]
+                    self.dispatcher.unregister(self.users.sockets[client])
+                    self.users.sockets[client].close()
+                    del self.users.sockets[client]
                 else:
                     message["client"] = client
                     logger.info(f"message {message} recieved from client {client}")
@@ -72,10 +71,12 @@ class Server(Chat):
             if "action" in message and message["action"] == "username":
                 username = message["user"].get("username")
                 response = self.template_message(
-                    username="accepted" if username not in self.users else "rejected"
+                    username="accepted"
+                    if username not in self.users.usernames
+                    else "rejected"
                 )
-                self.users[username] = message["client"]
-            self.send_message(self.clients[message["client"]], response)
+                self.users.usernames[username] = message["client"]
+            self.send_message(self.users.sockets[message["client"]], response)
 
             # response = self.reply(message)
 
@@ -102,9 +103,9 @@ class Server(Chat):
                 pass
             else:
                 logger.info(f"Connected client: {client} from address: {addr}")
-                self.clients[client.fileno()] = client
+                self.users.sockets[client.fileno()] = client
             finally:
-                for _, client in self.clients.items():
+                for client in self.users.sockets.values():
                     self.dispatcher.register(client, select.POLLIN | select.POLLOUT)
             events = self.dispatcher.poll(TIMEOUT)
             if events:
