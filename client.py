@@ -1,8 +1,9 @@
 import sys
 import threading
+import time
 from socket import AF_INET, SOCK_STREAM, socket
 
-from app.config import DEFAULT_PORT
+from app.config import DEFAULT_PORT, TIMEOUT
 from app.utils import Chat
 from log.settings.client_log_config import logger
 from log.settings.decor_log_config import Log
@@ -12,26 +13,23 @@ class Client(Chat):
     def __init__(self):
         self.username = None
 
-    @staticmethod
     @Log()
-    def parse_message(message):
+    def parse_message(self, message):
         logger.info(f"Parsing messagefrom server: {message}")
 
         if message["action"] == "login":
-            if message["username"] == "accepted":
-                return True
-            return False
+            return message["username"]
 
         if message["action"] == "notification":
             return f'{message["response"]}'
 
-        if "body" in message:
+        if message["action"] == "msg" and message["to_user"] == self.username:
             return f"{message['body']}"
 
-        if "response" in message and message["response"] < 300:
-            return f'{message["response"]}: {message["alert"]}'
-
-        return f'{message["response"]}: {message["error"]}'
+        if message["action"] == "status code":
+            if message["response"] < 400:
+                return f'{message["response"]}: {message["alert"]}'
+            return f'{message["response"]}: {message["error"]}'
 
     @Log()
     def create_message(self, **kwargs):
@@ -48,9 +46,7 @@ class Client(Chat):
     @Log()
     def parse_params(self):
         params = sys.argv
-        port = (
-            int(params[2]) if len(params) > 2 and params[2].isdigit() else DEFAULT_PORT
-        )
+        port = int(params[2]) if len(params) > 2 else DEFAULT_PORT
         address = params[1]
         logger.info(f"Address: {address} and port: {port} from CLI")
         return address, port
@@ -73,6 +69,7 @@ class Client(Chat):
             )
             sys.exit(1)
 
+    @Log()
     def recieve_message(self):
         try:
             message = self.get_message(self.sock)
@@ -83,32 +80,58 @@ class Client(Chat):
             logger.info(f"Recieved message {message}")
             return self.parse_message(message)
 
+    @Log()
     def set_username(self):
         while not self.username:
             self.username = input("Enter your username ")
-            message = self.presence()
-            message["action"] = "login"
+            message = self.create_message(action="login")
             self.send_message(self.sock, message)
-            if not self.recieve_message():
+            if self.recieve_message() == "rejected":
                 print(f"Sorry, username {self.username} is busy :(")
                 self.username = None
+
+    @Log()
+    def outgoing(self):
+        while message := input(
+            'Enter message or command "/users_list"\nLeave empty and press Enter for exit'
+        ):
+            if not message:
+                break
+            elif message == "/users_list":
+                self.send_message(
+                    self.sock, self.create_message(action="commands", body=message)
+                )
+            else:
+                self.send_message(
+                    self.sock,
+                    self.create_message(
+                        action="msg",
+                        body=message,
+                        to_user=input("Enter username of target "),
+                    ),
+                )
+
+    @Log()
+    def incomming(self):
+        while message := self.recieve_message():
+            print(message)
 
 
 if __name__ == "__main__":
     client = Client()
     client.run()
     client.set_username()
-    client.send_message(client.sock, client.presence())
-    client.recieve_message()
-    client.send_message(
-        client.sock, client.create_message(action="commands", body="/users_list")
-    )
-    client.recieve_message()
-    print(client.username)
 
-    # if "send" in sys.argv:
-    #     while message := input("Enter your message or Enter for exit: "):
-    #         _message = client.template_message(body=message)
-    #         logger.info(f"Message {_message} was sent")
-    #         client.send_message(client.sock, _message)
-    # else:
+    transmitter = threading.Thread(target=client.outgoing)
+    transmitter.daemon = True
+    transmitter.start()
+
+    reciever = threading.Thread(target=client.incomming)
+    reciever.daemon = True
+    reciever.start()
+
+    while True:
+        time.sleep(TIMEOUT)
+        if transmitter.is_alive() and reciever.is_alive():
+            continue
+        break

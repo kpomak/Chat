@@ -24,10 +24,11 @@ class ServerTestCase(unittest.TestCase):
     def tearDown(self):
         self.sock.close()
 
-    def test_reply(self):
-        self.assertEqual(
-            self.server.reply(self.server.template_message())["response"], HTTPStatus.OK
-        )
+    # deprecated
+    # def test_reply(self):
+    #     self.assertEqual(
+    #         self.server.reply(self.server.template_message())["response"], HTTPStatus.OK
+    #     )
 
     # deprecated
     # def test_reply_no_action(self):
@@ -35,10 +36,11 @@ class ServerTestCase(unittest.TestCase):
     #         self.server.reply({"time": time.time()})["response"], HTTPStatus.BAD_REQUEST
     #     )
 
-    def test_reply_no_time(self):
-        self.assertEqual(
-            self.server.reply({"action": "test"})["response"], HTTPStatus.BAD_REQUEST
-        )
+    # deprecated
+    # def test_reply_no_time(self):
+    #     self.assertEqual(
+    #         self.server.reply({"action": "test"})["response"], HTTPStatus.BAD_REQUEST
+    #     )
 
     @patch("sys.argv", ["", "-p", str(TEST_PORT), "-a", TEST_IP])
     def test_parse_params(self):

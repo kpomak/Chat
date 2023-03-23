@@ -1,58 +1,19 @@
 import select
 import sys
 from collections import deque
-from http import HTTPStatus
 from socket import AF_INET, SOCK_STREAM, socket
 
 from app.config import DEFAULT_PORT, MAX_CONNECTIONS, TIMEOUT
-from app.utils import Chat, Users
+from app.utils import Chat, Users, ExchangeMessageMixin
 from log.settings.decor_log_config import Log
 from log.settings.server_log_config import logger
 
 
-class Server(Chat):
+class Server(Chat, ExchangeMessageMixin):
     def __init__(self):
         self.users = Users()
         self.messages = deque()
         self.dispatcher = select.poll()
-
-    @Log()
-    def reply(self, message):
-        logger.info(f"Replying on message: {message}")
-        if "time" in message:
-            return self.template_message(
-                action="status code", response=HTTPStatus.OK, alert="OK"
-            )
-        return self.template_message(
-            action="status code", response=HTTPStatus.BAD_REQUEST, error=self.get_error
-        )
-
-    @Log()
-    def exchange_service(self, message, events):
-        logger.info(f"Exchange service for message: {message}")
-
-        # presence message
-        if message["action"] == "presence":
-            return message["client"], self.reply(message)
-
-        # sign up message
-        if message["action"] == "login":
-            username = message["user"].get("username")
-            response = self.template_message(
-                action="login",
-                username="accepted"
-                if username not in self.users.usernames
-                else "rejected",
-            )
-            self.users.usernames[username] = message["client"]
-            return message["client"], response
-
-        # commands
-        if message["action"] == "commands" and message["body"] == "/users_list":
-            response = self.template_message(
-                action="notification", response=list(self.users.usernames.keys())
-            )
-            return message["client"], response
 
     @property
     @Log()
@@ -76,33 +37,33 @@ class Server(Chat):
         )
         return sock
 
+    @Log()
+    def disconnect_client(self, client):
+        logger.info(f"Client {client} disconnected")
+        self.dispatcher.unregister(self.users.sockets[client])
+        self.users.sockets[client].close()
+        self.users.delete_user(client)
+
+    @Log()
     def check_messages(self, events):
         for client, event in events:
             if event & select.POLLIN:
                 try:
                     message = self.get_message(self.users.sockets[client])
                 except Exception:
-                    logger.info(f"Client {client} disconnected")
-                    self.dispatcher.unregister(self.users.sockets[client])
-                    self.users.sockets[client].close()
-                    del self.users.sockets[client]
+                    self.disconnect_client(client)
                 else:
                     message["client"] = client
                     logger.info(f"message {message} recieved from client {client}")
                     self.messages.append(message)
 
+    @Log()
     def answer_on_messages(self, events):
         while self.messages:
             message = self.messages.popleft()
             if "action" in message:
                 client, response = self.exchange_service(message, events)
                 self.send_message(self.users.sockets[client], response)
-
-            # for client, event in events:
-            #     if event & select.POLLOUT:
-            #         logger.info(f"Sending message {message} to client {client}")
-            #         response = self.reply(message)
-            #         self.send_message(self.clients[client], response)
 
     @Log()
     def run(self):
@@ -122,9 +83,8 @@ class Server(Chat):
             else:
                 logger.info(f"Connected client: {client} from address: {addr}")
                 self.users.sockets[client.fileno()] = client
-            finally:
-                for client in self.users.sockets.values():
-                    self.dispatcher.register(client, select.POLLIN | select.POLLOUT)
+                self.dispatcher.register(client, select.POLLIN | select.POLLOUT)
+
             events = self.dispatcher.poll(TIMEOUT)
             if events:
                 self.answer_on_messages(events)
