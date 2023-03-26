@@ -1,31 +1,19 @@
 import select
 import sys
 from collections import deque
-from http import HTTPStatus
 from socket import AF_INET, SOCK_STREAM, socket
 
 from app.config import DEFAULT_PORT, MAX_CONNECTIONS, TIMEOUT
-from app.utils import Chat
+from app.utils import Chat, Users, ExchangeMessageMixin
 from log.settings.decor_log_config import Log
 from log.settings.server_log_config import logger
 
 
-class Server(Chat):
+class Server(Chat, ExchangeMessageMixin):
     def __init__(self):
-        self.clients = {}
+        self.users = Users()
         self.messages = deque()
         self.dispatcher = select.poll()
-
-    @Log()
-    def reply(self, message):
-        logger.info(f"Replying on message: {message}")
-        if "body" in message:
-            return self.template_message(body=message["body"])
-        if "action" in message and "time" in message:
-            return self.template_message(response=HTTPStatus.OK, alert="OK")
-        return self.template_message(
-            response=HTTPStatus.BAD_REQUEST, error=self.get_error
-        )
 
     @property
     @Log()
@@ -49,29 +37,33 @@ class Server(Chat):
         )
         return sock
 
+    @Log()
+    def disconnect_client(self, client):
+        logger.info(f"Client {client} disconnected")
+        self.dispatcher.unregister(self.users.sockets[client])
+        self.users.sockets[client].close()
+        self.users.delete_user(client)
+
+    @Log()
     def check_messages(self, events):
         for client, event in events:
             if event & select.POLLIN:
                 try:
-                    message = self.get_message(self.clients[client])
+                    message = self.get_message(self.users.sockets[client])
                 except Exception:
-                    logger.info(f"Client {client} disconnected")
-                    self.dispatcher.unregister(self.clients[client])
-                    self.clients[client].close()
-                    del self.clients[client]
+                    self.disconnect_client(client)
                 else:
                     message["client"] = client
                     logger.info(f"message {message} recieved from client {client}")
                     self.messages.append(message)
 
+    @Log()
     def answer_on_messages(self, events):
         while self.messages:
             message = self.messages.popleft()
-            for client, event in events:
-                if event & select.POLLOUT and client != message["client"]:
-                    logger.info(f"Sending message {message} to client {client}")
-                    response = self.reply(message)
-                    self.send_message(self.clients[client], response)
+            if "action" in message:
+                client, response = self.exchange_service(message, events)
+                self.send_message(self.users.sockets[client], response)
 
     @Log()
     def run(self):
@@ -90,10 +82,9 @@ class Server(Chat):
                 pass
             else:
                 logger.info(f"Connected client: {client} from address: {addr}")
-                self.clients[client.fileno()] = client
-            finally:
-                for _, client in self.clients.items():
-                    self.dispatcher.register(client, select.POLLIN | select.POLLOUT)
+                self.users.sockets[client.fileno()] = client
+                self.dispatcher.register(client, select.POLLIN | select.POLLOUT)
+
             events = self.dispatcher.poll(TIMEOUT)
             if events:
                 self.answer_on_messages(events)

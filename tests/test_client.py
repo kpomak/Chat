@@ -34,6 +34,7 @@ class ClientTestCase(unittest.TestCase):
 
     def test_parse_message_ok(self):
         message_ok = {
+            "action": "status code",
             "response": HTTPStatus.OK,
             "alert": "OK",
         }
@@ -44,6 +45,7 @@ class ClientTestCase(unittest.TestCase):
 
     def test_parse_message_bad(self):
         message_bad = {
+            "action": "status code",
             "response": HTTPStatus.BAD_REQUEST,
             "error": "BAD_REQUEST",
         }
@@ -59,7 +61,7 @@ class ClientTestCase(unittest.TestCase):
             "type": "status",
             "time": presence_message["time"],
             "user": {
-                "account_name": "anonymous",
+                "username": None,
                 "status": "online",
             },
         }
