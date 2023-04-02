@@ -1,12 +1,11 @@
 import os
 import sys
-import inspect
-from logging import INFO, FileHandler, Formatter, Logger, StreamHandler, getLogger
+from logging import FileHandler, Formatter, Logger, StreamHandler, getLogger
 from logging.handlers import TimedRotatingFileHandler
 
 sys.path.append(os.getcwd())
 
-from app.config import ENCODING
+from app.config import ENCODING, LOGGER_LEVEL
 
 
 class LoggerProxy(Logger):
@@ -32,18 +31,18 @@ class LoggerProxy(Logger):
         )
 
         logger = getLogger(self.name)
-        logger.setLevel(INFO)
+        logger.setLevel(LOGGER_LEVEL)
 
         for handler in (stream_handler, file_handler):
             handler.setFormatter(formatter)
-            handler.setLevel(INFO)
+            handler.setLevel(LOGGER_LEVEL)
             logger.addHandler(handler)
 
         return logger
 
 
 if __name__ == "__main__":
-    app = LoggerProxy("app", INFO)
+    app = LoggerProxy("app", LOGGER_LEVEL)
     chat_logger = app.get_logger(False)
     chat_logs = LoggerProxy("app")
     chat_logs = chat_logs.get_logger(True)

@@ -1,3 +1,7 @@
+import logging
+
+LOGGER_LEVEL = logging.ERROR
+
 DEFAULT_PORT = 7777
 
 MAX_CONNECTIONS = 16
