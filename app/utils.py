@@ -13,37 +13,14 @@ class BaseVerifier(type):
 
         arguments = []
         for key, value in namespaces.items():
-            # Проверяем, является ли значение функцией
-            if isinstance(value, FunctionType):
-                # Если да, то проверяем наличие декоратора
-                if hasattr(value, "__closure__"):
-                    # Достаем аргументы декоратора
-                    args = value.__closure__
-                    # Записываем в метаданные метода
-                    arguments.append(args)
-        print(arguments)
-
-        # try:
-        #     bytecode = dis.Bytecode(value)
-        # except TypeError:
-        #     pass
-        # else:
-        #     for instance in bytecode:
-        #         print(instance)
-
-        # try:
-        #     result = dis.dis(value)
-        # except TypeError:
-        #     print(key, "/" * 30)
-        # else:
-        #     if result:
-        #         for item in result:
-        #             try:
-        #                 print(item, type(item), dir(item))
-        #                 with open("dis.log", "a", "utf-8") as f:
-        #                     f.write(str({item: type(item)}))
-        #             except TypeError:
-        #                 print("Erop")
+            if isinstance(value, FunctionType) and hasattr(value, "__closure__"):
+                try:
+                    args = value.__closure__[0].cell_contents
+                except TypeError:
+                    args = value
+                arguments.append(args)
+        for func in arguments:
+            print(func)
 
 
 class Chat:
