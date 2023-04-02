@@ -10,7 +10,12 @@ from log.settings.decor_log_config import Log
 
 
 class ServerVerifier(BaseVerifier):
-    pass
+    def __init__(cls, name, bases, namespaces):
+        super().__init__(name, bases, namespaces)
+
+        params = cls.attrs[f"_{name}_attrs"]
+        if "accept" in params or "listen" in params:
+            raise TypeError("Accept or listen methods are not allowed")
 
 
 class Client(Chat, metaclass=ServerVerifier):
@@ -120,22 +125,25 @@ class Client(Chat, metaclass=ServerVerifier):
         while message := self.recieve_message():
             print(message)
 
+    @Log()
+    def main_loop(self):
+        transmitter = threading.Thread(target=self.outgoing)
+        transmitter.daemon = True
+        transmitter.start()
+
+        reciever = threading.Thread(target=self.incomming)
+        reciever.daemon = True
+        reciever.start()
+
+        while True:
+            time.sleep(TIMEOUT)
+            if transmitter.is_alive() and reciever.is_alive():
+                continue
+            break
+
 
 if __name__ == "__main__":
     client = Client()
     client.run()
     client.set_username()
-
-    transmitter = threading.Thread(target=client.outgoing)
-    transmitter.daemon = True
-    transmitter.start()
-
-    reciever = threading.Thread(target=client.incomming)
-    reciever.daemon = True
-    reciever.start()
-
-    while True:
-        time.sleep(TIMEOUT)
-        if transmitter.is_alive() and reciever.is_alive():
-            continue
-        break
+    client.main_loop()

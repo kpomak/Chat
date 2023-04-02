@@ -12,7 +12,11 @@ from log.settings.server_log_config import logger
 
 
 class ServerVerifier(BaseVerifier):
-    pass
+    def __init__(cls, name, bases, namespaces):
+        super().__init__(name, bases, namespaces)
+
+        if "connect" in cls.attrs[f"_{name}_attrs"]:
+            raise TypeError("Connect method is not allowed")
 
 
 class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
@@ -80,7 +84,10 @@ class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
         try:
             sock = self.init_socket()
         except PortError as p:
-            logger.critical(f"Advertencia! Error detectado ;) {p}")
+            logger.critical(f"Yuyachiy! Sinchi pantay tarisqa {p}")
+            sys.exit(1)
+        except TypeError as e:
+            logger.critical(f"Atención! Error crítico detectado ;) {e}")
             sys.exit(1)
         except Exception:
             logger.critical(

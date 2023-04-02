@@ -4,7 +4,7 @@ import random
 import dis
 from types import FunctionType
 
-from app.config import MAX_PACKAGE_LENGTH, ENCODING, ERRORS
+from app.config import MAX_PACKAGE_LENGTH, ENCODING, ERRORS, VERIFICATION_PARAMS
 
 
 class BaseVerifier(type):
@@ -12,15 +12,31 @@ class BaseVerifier(type):
         super().__init__(name, bases, namespaces)
 
         arguments = []
-        for key, value in namespaces.items():
-            if isinstance(value, FunctionType) and hasattr(value, "__closure__"):
-                try:
-                    args = value.__closure__[0].cell_contents
-                except TypeError:
-                    args = value
-                arguments.append(args)
+        parent_attrs = [base.__dict__ for base in bases]
+        for attr_dict in (namespaces, *parent_attrs):
+            for value in attr_dict.values():
+                if isinstance(value, (FunctionType, staticmethod)):
+                    if hasattr(value, "__closure__"):
+                        try:
+                            args = value.__closure__[0].cell_contents
+                        except TypeError:
+                            args = value
+                    else:
+                        args = value
+                    arguments.append(args)
+
+        cls.attrs = {f"_{name}_attrs": set()}
         for func in arguments:
-            print(func)
+            bytecode = dis.Bytecode(func)
+            for line in bytecode:
+                if line.argval in VERIFICATION_PARAMS:
+                    cls.attrs[f"_{name}_attrs"].add(line.argval)
+
+        del arguments
+
+        params = cls.attrs[f"_{name}_attrs"]
+        if not ("SOCK_STREAM" in params and "AF_INET" in params):
+            raise TypeError("TCP only")
 
 
 class Chat:
