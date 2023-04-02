@@ -4,7 +4,29 @@ import time
 import select
 from http import HTTPStatus
 
-from app.config import ENCODING, ERRORS, MAX_PACKAGE_LENGTH
+from .config import ENCODING, ERRORS, MAX_PACKAGE_LENGTH
+from .exceptions import PortError
+
+
+class NamedPort:
+    def __init__(self, name, default):
+        self.name = f"_{name}"
+        self.default = default
+
+    def __get__(self, instance, cls):
+        return instance.__dict__[self.name]
+
+    def __set__(self, instance, value):
+        if not value:
+            value = self.default
+
+        if value < 0:
+            raise PortError(value)
+
+        instance.__dict__[self.name] = value
+
+    def __delete__(self, instance):
+        raise AttributeError("Port deleting  os not implemented")
 
 
 class Users:
