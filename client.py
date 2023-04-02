@@ -13,6 +13,10 @@ class ServerVerifier(BaseVerifier):
     def __init__(cls, name, bases, namespaces):
         super().__init__(name, bases, namespaces)
 
+        for attr in namespaces.values():
+            if isinstance(attr, socket):
+                raise TypeError("Socket shouldn't be created at class level")
+
         params = cls.attrs[f"_{name}_attrs"]
         if "accept" in params or "listen" in params:
             raise TypeError("Accept or listen methods are not allowed")

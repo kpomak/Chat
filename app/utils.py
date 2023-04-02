@@ -32,7 +32,7 @@ class BaseVerifier(type):
                 if line.argval in VERIFICATION_PARAMS:
                     cls.attrs[f"_{name}_attrs"].add(line.argval)
 
-        del arguments
+        arguments.clear()
 
         params = cls.attrs[f"_{name}_attrs"]
         if not ("SOCK_STREAM" in params and "AF_INET" in params):
