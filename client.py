@@ -4,12 +4,25 @@ import time
 from socket import AF_INET, SOCK_STREAM, socket
 
 from app.config import DEFAULT_PORT, TIMEOUT
-from app.utils import Chat
+from app.utils import Chat, BaseVerifier
 from log.settings.client_log_config import logger
 from log.settings.decor_log_config import Log
 
 
-class Client(Chat):
+class ServerVerifier(BaseVerifier):
+    def __init__(cls, name, bases, namespaces):
+        super().__init__(name, bases, namespaces)
+
+        for attr in namespaces.values():
+            if isinstance(attr, socket):
+                raise TypeError("Socket shouldn't be created at class level")
+
+        params = cls.attrs[f"_{name}_attrs"]
+        if "accept" in params or "listen" in params:
+            raise TypeError("Accept or listen methods are not allowed")
+
+
+class Client(Chat, metaclass=ServerVerifier):
     def __init__(self):
         self.username = None
 
@@ -116,22 +129,25 @@ class Client(Chat):
         while message := self.recieve_message():
             print(message)
 
+    @Log()
+    def main_loop(self):
+        transmitter = threading.Thread(target=self.outgoing)
+        transmitter.daemon = True
+        transmitter.start()
+
+        reciever = threading.Thread(target=self.incomming)
+        reciever.daemon = True
+        reciever.start()
+
+        while True:
+            time.sleep(TIMEOUT)
+            if transmitter.is_alive() and reciever.is_alive():
+                continue
+            break
+
 
 if __name__ == "__main__":
     client = Client()
     client.run()
     client.set_username()
-
-    transmitter = threading.Thread(target=client.outgoing)
-    transmitter.daemon = True
-    transmitter.start()
-
-    reciever = threading.Thread(target=client.incomming)
-    reciever.daemon = True
-    reciever.start()
-
-    while True:
-        time.sleep(TIMEOUT)
-        if transmitter.is_alive() and reciever.is_alive():
-            continue
-        break
+    client.main_loop()

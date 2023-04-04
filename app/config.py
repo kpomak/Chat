@@ -1,3 +1,7 @@
+import logging
+
+LOGGER_LEVEL = logging.ERROR
+
 DEFAULT_PORT = 7777
 
 MAX_CONNECTIONS = 16
@@ -14,3 +18,5 @@ ERRORS = [
     "It's amazing how you manage to fail even at the simplest tasks.",
     "You're so clueless, I'm surprised you can find your way out of bed in the morning.",
 ]
+
+VERIFICATION_PARAMS = ("accept", "listen", "connect", "AF_INET", "SOCK_STREAM")

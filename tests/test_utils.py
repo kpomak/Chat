@@ -3,7 +3,6 @@ import sys
 import json
 import time
 import unittest
-from unittest.mock import patch
 
 sys.path.append(os.getcwd())
 

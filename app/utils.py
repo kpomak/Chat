@@ -1,82 +1,42 @@
 import json
-import random
 import time
-import select
-from http import HTTPStatus
+import random
+import dis
+from types import FunctionType
 
-from app.config import ENCODING, ERRORS, MAX_PACKAGE_LENGTH
-
-
-class Users:
-    def __init__(self):
-        self.sockets_list = {}
-        self.usernames_list = {}
-
-    @property
-    def sockets(self):
-        return self.sockets_list
-
-    @property
-    def usernames(self):
-        return self.usernames_list
-
-    def get_socket(self, username):
-        return self.sockets_list.get(self.usernames_list.get(username))
-
-    def get_username(self, fileno):
-        for key, value in self.usernames_list.items():
-            if value == fileno:
-                return key
-
-    def delete_user(self, fileno):
-        username = self.get_username(fileno)
-        if username:
-            del self.usernames_list[username]
-        del self.sockets_list[fileno]
+from app.config import MAX_PACKAGE_LENGTH, ENCODING, ERRORS, VERIFICATION_PARAMS
 
 
-class ExchangeMessageMixin:
-    def exchange_service(self, message, events):
-        # p2p delivery
-        if message["action"] == "msg" and "to_user" in message:
-            for client, event in events:
-                if (
-                    message["to_user"] == self.users.get_username(client)
-                    and event & select.POLLOUT
-                ):
-                    return client, message
+class BaseVerifier(type):
+    def __init__(cls, name, bases, namespaces):
+        super().__init__(name, bases, namespaces)
 
-        # presence message
-        if message["action"] == "presence":
-            response = self.template_message(
-                action="status code", response=HTTPStatus.OK, alert="OK"
-            )
+        arguments = []
+        parent_attrs = [base.__dict__ for base in bases]
+        for attr_dict in (namespaces, *parent_attrs):
+            for value in attr_dict.values():
+                if isinstance(value, (FunctionType, staticmethod)):
+                    if hasattr(value, "__closure__"):
+                        try:
+                            args = value.__closure__[0].cell_contents
+                        except TypeError:
+                            args = value
+                    else:
+                        args = value
+                    arguments.append(args)
 
-        # sign up message
-        elif message["action"] == "login":
-            username = message["user"].get("username")
-            response = self.template_message(
-                action="login",
-                username="accepted"
-                if username not in self.users.usernames
-                else "rejected",
-            )
-            self.users.usernames[username] = message["client"]
+        cls.attrs = {f"_{name}_attrs": set()}
+        for func in arguments:
+            bytecode = dis.Bytecode(func)
+            for line in bytecode:
+                if line.argval in VERIFICATION_PARAMS:
+                    cls.attrs[f"_{name}_attrs"].add(line.argval)
 
-        # commands
-        elif message["action"] == "commands" and message["body"] == "/users_list":
-            response = self.template_message(
-                action="notification", response=list(self.users.usernames.keys())
-            )
+        arguments.clear()
 
-        # bad request
-        else:
-            response = self.template_message(
-                action="status code",
-                response=HTTPStatus.BAD_REQUEST,
-                error=self.get_error,
-            )
-        return message["client"], response
+        params = cls.attrs[f"_{name}_attrs"]
+        if not ("SOCK_STREAM" in params and "AF_INET" in params):
+            raise TypeError("TCP only")
 
 
 class Chat:

@@ -4,12 +4,24 @@ from collections import deque
 from socket import AF_INET, SOCK_STREAM, socket
 
 from app.config import DEFAULT_PORT, MAX_CONNECTIONS, TIMEOUT
-from app.utils import Chat, Users, ExchangeMessageMixin
+from app.utils import Chat, BaseVerifier
+from app.server_utils import Users, ExchangeMessageMixin, NamedPort
+from app.exceptions import PortError
 from log.settings.decor_log_config import Log
 from log.settings.server_log_config import logger
 
 
-class Server(Chat, ExchangeMessageMixin):
+class ServerVerifier(BaseVerifier):
+    def __init__(cls, name, bases, namespaces):
+        super().__init__(name, bases, namespaces)
+
+        if "connect" in cls.attrs[f"_{name}_attrs"]:
+            raise TypeError("Connect method is not allowed")
+
+
+class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
+    port = NamedPort("server_port", DEFAULT_PORT)
+
     def __init__(self):
         self.users = Users()
         self.messages = deque()
@@ -19,17 +31,19 @@ class Server(Chat, ExchangeMessageMixin):
     @Log()
     def parse_params(self):
         params = sys.argv
-        port = int(params[params.index("-p") + 1]) if "-p" in params else DEFAULT_PORT
+        port = int(params[params.index("-p") + 1]) if "-p" in params else ""
         address = params[params.index("-a") + 1] if "-a" in params else ""
         logger.info(
-            f"Address: {address if address else '0.0.0.0'} and port: {port} from CLI"
+            f"Address: {address if address else '0.0.0.0'} "
+            f"and port: {port if port else 'by default'} from CLI"
         )
         return address, port
 
     @Log()
     def init_socket(self):
         sock = socket(AF_INET, SOCK_STREAM)
-        sock.bind(self.parse_params)
+        address, self.port = self.parse_params
+        sock.bind((address, self.port))
         sock.settimeout(TIMEOUT)
         sock.listen(MAX_CONNECTIONS)
         logger.info(
@@ -69,6 +83,12 @@ class Server(Chat, ExchangeMessageMixin):
     def run(self):
         try:
             sock = self.init_socket()
+        except PortError as p:
+            logger.critical(f"Yuyachiy! Sinchi pantay tarisqa {p}")
+            sys.exit(1)
+        except TypeError as e:
+            logger.critical(f"Atención! Error crítico detectado ;) {e}")
+            sys.exit(1)
         except Exception:
             logger.critical(
                 f"Achtung!!! Ein kritischer Fehler wurde bemerkt! Was ist los? {self.get_error}"
