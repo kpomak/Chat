@@ -1,6 +1,14 @@
 from datetime import datetime
 
-from pony.orm import Required, Optional, Database, Set, set_sql_debug, db_session
+from pony.orm import (
+    Required,
+    Optional,
+    Database,
+    Set,
+    set_sql_debug,
+    db_session,
+    delete,
+)
 from config import DEBUG, DEFAULT_PORT
 
 
@@ -14,7 +22,7 @@ class Storage:
         is_active = Required(bool, default=True)
 
         history = Set(lambda: Storage.ClientHistory)
-        contacts = Set(lambda: Storage.ContactsList, reverse="client_id")
+        contacts = Set(lambda: Storage.ContactsList, reverse="owner_id")
         client = Optional(
             lambda: Storage.ContactsList,
         )
@@ -62,9 +70,59 @@ class Storage:
 
     @db_session
     def get_contacts(self, username):
-        pass
+        client = self.Client.select(lambda client: client.username == username).get()
+        contacts = self.ContactsList.select(lambda record: record.owner_id == client)
+        return [contact.contact_id.username for contact in contacts]
+
+    @db_session
+    def add_contact(self, username, contact_username):
+        client = self.Client.select(lambda client: client.username == username).get()
+        contact = self.Client.select(
+            lambda client: client.username == contact_username
+        ).get()
+        if (
+            not contact
+            or self.ContactsList.select(
+                lambda record: record.owner_id == client
+                and record.contact_id == contact
+            ).get()
+        ):
+            return
+        record = self.ContactsList(
+            owner_id=client,
+            contact_id=contact,
+        )
+
+    @db_session
+    def del_contact(self, username, contact_username):
+        client = self.Client.select(lambda client: client.username == username).get()
+        contact = self.Client.select(
+            lambda client: client.username == contact_username
+        ).get()
+
+        delete(
+            record
+            for record in self.ContactsList
+            if record.owner_id == client and record.contact_id == contact
+        )
 
 
 if __name__ == "__main__":
     server_db = Storage()
-    server_db.activate_user("Marvl")
+    server_db.activate_client("Alina")
+    server_db.activate_client("Oleg")
+    server_db.add_contact("Alina", "Oleg")
+    print(
+        "Alina has these contacts in her contacts list: ",
+        server_db.get_contacts("Alina"),
+    )
+    print(
+        "Oleg has these contacts in his contacts list: ",
+        server_db.get_contacts("Oleg"),
+    )
+    server_db.del_contact("Alina", "Oleg")
+    server_db.del_contact("Oleg", "Alina")
+    print(
+        "Alina has these contacts in her contacts list: ",
+        server_db.get_contacts("Alina"),
+    )

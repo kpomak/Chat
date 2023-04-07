@@ -9,7 +9,7 @@ MAX_PACKAGE_LENGTH = 2048
 
 ENCODING = "utf-8"
 
-DEBUG = True
+DEBUG = False
 
 TIMEOUT = 1.0
 
