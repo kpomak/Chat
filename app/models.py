@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from pony.orm import Required, Optional, Database, Set, set_sql_debug, db_session
-from config import DEBUG
+from config import DEBUG, DEFAULT_PORT
 
 
 class Storage:
@@ -15,22 +15,21 @@ class Storage:
 
         history = Set(lambda: Storage.ClientHistory)
         contacts = Set(lambda: Storage.ContactsList, reverse="client_id")
-        user = Optional(
+        client = Optional(
             lambda: Storage.ContactsList,
         )
 
     class ClientHistory(db.Entity):
         _table_ = "clients history"
+        client_id = Required(lambda: Storage.Client)
         entry_date = Required(datetime)
         ip_address = Required(str)
         port = Required(int)
 
-        user_id = Required(lambda: Storage.Client)
-
     class ContactsList(db.Entity):
         _table_ = "contacts list"
         owner_id = Required(lambda: Storage.Client)
-        client_id = Required(lambda: Storage.Client)
+        contact_id = Required(lambda: Storage.Client)
 
     def __init__(self):
         self.db.bind(provider="sqlite", filename="../db.sqlite3", create_db=True)
@@ -38,69 +37,34 @@ class Storage:
         self.db.generate_mapping(create_tables=True)
 
     @db_session
-    def add_user(self, username, info=""):
-        client = self.Client(username=username, info=info)
+    def activate_client(self, username, *args, info="", **kwargs):
+        client = self.Client.select(lambda client: client.username == username).get()
+        if not client:
+            client = self.Client(username=username, info=info)
+            client.flush()
+        elif not client.is_active:
+            client.is_active = True
+        self.add_history(client)
 
     @db_session
-    def get_userlist(self):
-        users = self.Client.select(lambda client: client.is_active == True)
-        return [user.username for user in users]
+    def add_history(self, client, **kwargs):
+        event = self.ClientHistory(
+            client_id=client.id,
+            entry_date=datetime.now(),
+            ip_address=kwargs.get("ip_address") or "n/a",
+            port=kwargs.get("port") or DEFAULT_PORT,
+        )
+
+    @db_session
+    def deactivate_client(self, username):
+        client = self.Client.select(lambda client: client.username == username).get()
+        client.is_active = False
+
+    @db_session
+    def get_contacts(self, username):
+        pass
 
 
 if __name__ == "__main__":
     server_db = Storage()
-    """
-    GET CONNECTION FROM THE LOCAL POOL
-    PRAGMA foreign_keys = false
-    BEGIN IMMEDIATE TRANSACTION
-
-    CREATE TABLE "client" (
-    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-    "username" TEXT UNIQUE NOT NULL,
-    "info" TEXT NOT NULL,
-    "is_active" BOOLEAN NOT NULL
-    )
-
-    CREATE TABLE "clients history" (
-    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-    "entry_date" DATETIME NOT NULL,
-    "ip_address" TEXT NOT NULL,
-    "port" INTEGER NOT NULL,
-    "user_id" INTEGER NOT NULL REFERENCES "client" ("id") ON DELETE CASCADE
-    )
-
-    CREATE INDEX "idx_clients history__user_id" ON "clients history" ("user_id")
-    CREATE TABLE "contacts list" (
-    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-    "owner_id" INTEGER NOT NULL REFERENCES "client" ("id"),
-    "client_id" INTEGER NOT NULL REFERENCES "client" ("id") ON DELETE CASCADE
-    )
-
-    CREATE INDEX "idx_contacts list__client_id" ON "contacts list" ("client_id")
-    CREATE INDEX "idx_contacts list__owner_id" ON "contacts list" ("owner_id")
-    COMMIT
-    PRAGMA foreign_keys = true
-    CLOSE CONNECTION
-    """
-
-    server_db.add_user(username="Fransis")
-
-    """
-    GET NEW CONNECTION
-    BEGIN IMMEDIATE TRANSACTION
-    INSERT INTO "client" ("username", "info", "is_active") VALUES (?, ?, ?)
-    ['Fransis', '', True]
-    COMMIT
-    RELEASE CONNECTION
-    """
-
-    print(server_db.get_userlist())  # ['Fransis']
-
-    """
-    GET CONNECTION FROM THE LOCAL POOL
-    SWITCH TO AUTOCOMMIT MODE
-    SELECT "client"."id", "client"."username", "client"."info", "client"."is_active"
-    FROM "client" "client"
-    WHERE "client"."is_active" = 1
-    RELEASE CONNECTION
-    """
+    server_db.activate_user("Marvl")
