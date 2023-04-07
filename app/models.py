@@ -2,6 +2,7 @@ from datetime import datetime
 
 from pony.orm import (
     Required,
+    PrimaryKey,
     Optional,
     Database,
     Set,
@@ -107,22 +108,55 @@ class Storage:
         )
 
 
+class ClientDBase:
+    db = Database()
+
+    class Contacts(db.Entity):
+        username = Required(str)
+        contact_nick = Optional(str)
+
+    class Messages(db.Entity):
+        contact = Required(str)
+        message = Required(str)
+        date = Required(datetime)
+        deleted = Required(bool, default=False)
+
+    def __init__(self, name):
+        self.db.bind(
+            provider="sqlite", filename=f"../db.{name}.sqlite3", create_db=True
+        )
+        set_sql_debug(DEBUG)
+        self.db.generate_mapping(create_tables=True)
+
+    @db_session
+    def add_message(self, contact_username, message, time):
+        store = self.Messages(
+            contact=contact_username, message=message, date=datetime.fromtimestamp(time)
+        )
+
+    @db_session
+    def update_contacts(self, users_list):
+        delete(contact for contact in self.Contacts if contact.co)
+
+
 if __name__ == "__main__":
-    server_db = Storage()
-    server_db.activate_client("Alina")
-    server_db.activate_client("Oleg")
-    server_db.add_contact("Alina", "Oleg")
-    print(
-        "Alina has these contacts in her contacts list: ",
-        server_db.get_contacts("Alina"),
-    )
-    print(
-        "Oleg has these contacts in his contacts list: ",
-        server_db.get_contacts("Oleg"),
-    )
-    server_db.del_contact("Alina", "Oleg")
-    server_db.del_contact("Oleg", "Alina")
-    print(
-        "Alina has these contacts in her contacts list: ",
-        server_db.get_contacts("Alina"),
-    )
+    # server_db = Storage()
+    # server_db.activate_client("Alina")
+    # server_db.activate_client("Oleg")
+    # server_db.add_contact("Alina", "Oleg")
+    # print(
+    #     "Alina has these contacts in her contacts list: ",
+    #     server_db.get_contacts("Alina"),
+    # )
+    # print(
+    #     "Oleg has these contacts in his contacts list: ",
+    #     server_db.get_contacts("Oleg"),
+    # )
+    # server_db.del_contact("Alina", "Oleg")
+    # server_db.del_contact("Oleg", "Alina")
+    # print(
+    #     "Alina has these contacts in her contacts list: ",
+    #     server_db.get_contacts("Alina"),
+    # )
+
+    client_db = ClientDBase("pony")
