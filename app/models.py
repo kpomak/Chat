@@ -9,7 +9,7 @@ from pony.orm import (
     db_session,
     delete,
 )
-from config import DEBUG, DEFAULT_PORT
+from app.config import DEBUG, DEFAULT_PORT
 
 
 class Storage:

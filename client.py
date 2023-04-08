@@ -5,11 +5,12 @@ from socket import AF_INET, SOCK_STREAM, socket
 
 from app.config import DEFAULT_PORT, TIMEOUT
 from app.utils import Chat, BaseVerifier
+from app.models import ClientDBase
 from log.settings.client_log_config import logger
 from log.settings.decor_log_config import Log
 
 
-class ServerVerifier(BaseVerifier):
+class ClientVerifier(BaseVerifier):
     def __init__(cls, name, bases, namespaces):
         super().__init__(name, bases, namespaces)
 
@@ -22,7 +23,7 @@ class ServerVerifier(BaseVerifier):
             raise TypeError("Accept or listen methods are not allowed")
 
 
-class Client(Chat, metaclass=ServerVerifier):
+class Client(Chat, metaclass=ClientVerifier):
     def __init__(self):
         self.username = None
 
@@ -36,7 +37,7 @@ class Client(Chat, metaclass=ServerVerifier):
         if message["action"] == "notification":
             return f'{message["response"]}'
 
-        if message["action"] == "msg" and message["to_user"] == self.username:
+        if message["action"] == "message" and message["user_login"] == self.username:
             return f"{message['body']}"
 
         if message["action"] == "status code":
@@ -46,9 +47,8 @@ class Client(Chat, metaclass=ServerVerifier):
 
     @Log()
     def create_message(self, **kwargs):
-        user = {"username": self.username, "status": "online"}
-        logger.info(f"Creating message from user {user['username']}")
-        return self.template_message(type="status", user=user, **kwargs)
+        logger.info(f"Creating message from user {self.username}")
+        return self.template_message(user_login=self.username, **kwargs)
 
     @Log()
     def presence(self):
@@ -102,25 +102,34 @@ class Client(Chat, metaclass=ServerVerifier):
             if self.recieve_message() == "rejected":
                 print(f"Sorry, username {self.username} is busy :(")
                 self.username = None
+        self.db = ClientDBase(self.username)
+        self.send_message(self.sock, self.create_message(action="get_contacts"))
 
     @Log()
     def outgoing(self):
         while message := input(
-            'Enter message or command "/users_list"\nLeave empty and press Enter for exit'
+            "\nEnter message or command from list below:"
+            "\n(/get_contacts, /get_users, /add_contact, /del_contact, /exit)\n"
         ):
-            if not message:
-                break
-            elif message == "/users_list":
-                self.send_message(
-                    self.sock, self.create_message(action="commands", body=message)
-                )
+            if message.startswith("/"):
+                context = {}
+                message = message[1:]
+                if message == "exit":
+                    break
+                elif message in ("get_contacts", "get_users"):
+                    context["action"] = message
+                elif message in ("add_contact", "del_contact"):
+                    context["action"] = message
+                    context["user_id"] = input("Enter username of target")
+                if context:
+                    self.send_message(self.sock, self.create_message(**context))
             else:
                 self.send_message(
                     self.sock,
                     self.create_message(
-                        action="msg",
+                        action="message",
                         body=message,
-                        to_user=input("Enter username of target "),
+                        user_id=input("Enter username of target "),
                     ),
                 )
 

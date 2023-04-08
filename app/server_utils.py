@@ -56,10 +56,10 @@ class Users:
 class ExchangeMessageMixin:
     def exchange_service(self, message, events):
         # p2p delivery
-        if message["action"] == "msg" and "to_user" in message:
+        if message["action"] == "message" and "user_id" in message:
             for client, event in events:
                 if (
-                    message["to_user"] == self.users.get_username(client)
+                    message["user_id"] == self.users.get_username(client)
                     and event & select.POLLOUT
                 ):
                     return client, message
@@ -72,19 +72,45 @@ class ExchangeMessageMixin:
 
         # sign up message
         elif message["action"] == "login":
-            username = message["user"].get("username")
-            response = self.template_message(
-                action="login",
-                username="accepted"
-                if username not in self.users.usernames
-                else "rejected",
-            )
-            self.users.usernames[username] = message["client"]
+            username = message["user_login"]
+            if username not in self.users.usernames:
+                result = "accepted"
+                self.users.usernames[username] = message["client"]
+                self.db.activate_client(message["user_login"])
+            else:
+                result = "rejected"
+            response = self.template_message(action="login", username=result)
 
-        # commands
-        elif message["action"] == "commands" and message["body"] == "/users_list":
+        # get_contacts
+        elif message["action"] == "get_contacts":
             response = self.template_message(
-                action="notification", response=list(self.users.usernames.keys())
+                action="status code",
+                response="250",
+                alert=self.db.get_contacts(message["user_login"]),
+            )
+
+        # get_users
+        elif message["action"] == "get_users":
+            response = self.template_message(
+                action="status code", response="251", alert=list(self.users.usernames)
+            )
+
+        # del_contact
+        elif message["action"] == "del_contact":
+            self.db.del_contact(message["user_login"], message["user_id"])
+            response = self.template_message(
+                action="status code",
+                response="252",
+                alert=f'Contact {message["user_id"]} deleted',
+            )
+
+        # add_contact
+        elif message["action"] == "add_contact":
+            self.db.add_contact(message["user_login"], message["user_id"])
+            response = self.template_message(
+                action="status code",
+                response="253",
+                alert=f"Contact {message['user_id']} added to contact list",
             )
 
         # bad request

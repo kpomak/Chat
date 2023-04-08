@@ -4,6 +4,7 @@ from collections import deque
 from socket import AF_INET, SOCK_STREAM, socket
 
 from app.config import DEFAULT_PORT, MAX_CONNECTIONS, TIMEOUT
+from app.models import Storage
 from app.utils import Chat, BaseVerifier
 from app.server_utils import Users, ExchangeMessageMixin, NamedPort
 from app.exceptions import PortError
@@ -26,6 +27,7 @@ class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
         self.users = Users()
         self.messages = deque()
         self.dispatcher = select.poll()
+        self.db = Storage()
 
     @property
     @Log()
@@ -55,6 +57,7 @@ class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
     def disconnect_client(self, client):
         logger.info(f"Client {client} disconnected")
         self.dispatcher.unregister(self.users.sockets[client])
+        self.db.deactivate_client(self.users.get_username(client))
         self.users.sockets[client].close()
         self.users.delete_user(client)
 

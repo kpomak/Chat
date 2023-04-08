@@ -1,6 +1,6 @@
 import logging
 
-LOGGER_LEVEL = logging.ERROR
+LOGGER_LEVEL = logging.INFO
 
 DEFAULT_PORT = 7777
 
