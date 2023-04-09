@@ -2,6 +2,7 @@ import select
 import sys
 from collections import deque
 from socket import AF_INET, SOCK_STREAM, socket
+from PyQt6 import QtCore, QtWidgets
 
 from app.config import DEFAULT_PORT, MAX_CONNECTIONS, TIMEOUT
 from app.models import Storage
@@ -10,6 +11,7 @@ from app.server_utils import Users, ExchangeMessageMixin, NamedPort
 from app.exceptions import PortError
 from log.settings.decor_log_config import Log
 from log.settings.server_log_config import logger
+from app.gui.server import UiMainWindow
 
 
 class ServerVerifier(BaseVerifier):
@@ -117,6 +119,20 @@ class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
                 self.check_messages(events)
 
 
-if __name__ == "__main__":
+def main():
     server = Server()
     server.run()
+    app = QtWidgets.QApplication(sys.argv)
+    MainWindow = QtWidgets.QMainWindow()
+    gui = UiMainWindow()
+    gui.setupUi(MainWindow)
+    gui.users.setModel(gui.get_all_users(server.db))
+    gui.users.resizeColumnsToContents()
+    gui.users.resizeRowsToContents()
+
+    MainWindow.show()
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()
