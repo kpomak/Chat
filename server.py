@@ -57,7 +57,8 @@ class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
     def disconnect_client(self, client):
         logger.info(f"Client {client} disconnected")
         self.dispatcher.unregister(self.users.sockets[client])
-        self.db.deactivate_client(self.users.get_username(client))
+        if self.users.get_username(client):
+            self.db.deactivate_client(self.users.get_username(client))
         self.users.sockets[client].close()
         self.users.delete_user(client)
 
@@ -97,6 +98,8 @@ class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
                 f"Achtung!!! Ein kritischer Fehler wurde bemerkt! Was ist los? {self.get_error}"
             )
             sys.exit(1)
+        else:
+            print("The Server is running")
 
         while True:
             try:

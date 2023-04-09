@@ -1,4 +1,5 @@
 from http import HTTPStatus
+
 from log import LoggerProxy
 
 proxy = LoggerProxy("client")
@@ -13,15 +14,18 @@ class MessageHandler:
             return message["username_status"]
 
         if message["action"] == "get_users":
-            return f'Active users:\n{{"\n".join(message["alert"])}}'
+            users_list = "\n".join(message["alert"])
+            return f"Active users:\n{users_list}"
 
         if message["action"] == "message" and message["user_id"] == self.username:
             self.db.add_message(message["user_login"], message["body"], message["time"])
             return f"{message['body']}"
 
         if message["action"] in ("get_contacts", "del_contact", "add_contact"):
+            contacts_list = "\n".join(message["alert"])
             self.db.update_contacts(message["alert"])
-            return f'Active users:\n{{"\n".join(message["alert"])}}'
+            self.db.update_messages()
+            return f"Contacts:\n{contacts_list}"
 
         if message["action"] == "status code":
             if message["response"] < 400:

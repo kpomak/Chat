@@ -103,7 +103,7 @@ class Client(Chat, MessageHandler, metaclass=ClientVerifier):
                     context["action"] = message
                 elif message in ("add_contact", "del_contact"):
                     context["action"] = message
-                    context["user_id"] = input("Enter username of target")
+                    context["user_id"] = input("Enter username of target: ")
                 if context:
                     self.send_message(self.sock, self.create_message(**context))
             else:
@@ -112,7 +112,7 @@ class Client(Chat, MessageHandler, metaclass=ClientVerifier):
                     self.create_message(
                         action="message",
                         body=message,
-                        user_id=input("Enter username of target "),
+                        user_id=input("Enter username of target: "),
                     ),
                 )
 
