@@ -52,7 +52,7 @@ class Storage:
             client.flush()
         elif not client.is_active:
             client.is_active = True
-        self.add_history(client)
+        self.add_history(client, **kwargs)
 
     @db_session
     def add_history(self, client, **kwargs):

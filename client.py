@@ -79,7 +79,7 @@ class Client(Chat, MessageHandler, metaclass=ClientVerifier):
     @Log()
     def set_username(self):
         while not self.username:
-            self.username = input("Enter your username ")
+            self.username = input("Enter your username: ")
             message = self.create_message(action="login")
             self.send_message(self.sock, message)
             if self.recieve_message() == "rejected":

@@ -74,9 +74,16 @@ class ExchangeMessageMixin:
         elif message["action"] == "login":
             username = message["user_login"]
             if username not in self.users.usernames:
+                fileno = message["client"]
+                socket = self.users.sockets[fileno]
+                ip_address, port = socket.getpeername()
+                self.users.usernames[username] = fileno
+                self.db.activate_client(
+                    message["user_login"],
+                    ip_address=ip_address,
+                    port=port,
+                )
                 result = "accepted"
-                self.users.usernames[username] = message["client"]
-                self.db.activate_client(message["user_login"])
             else:
                 result = "rejected"
             response = self.template_message(action="login", username_status=result)
