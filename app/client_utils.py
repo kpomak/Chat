@@ -6,7 +6,7 @@ proxy = LoggerProxy("client")
 logger = proxy.get_logger()
 
 
-class MessageHandler:
+class MessageHandlerMixin:
     def parse_message(self, message):
         logger.info(f"Parsing messagefrom server: {message}")
 
@@ -18,13 +18,17 @@ class MessageHandler:
             return f"Active users:\n{users_list}"
 
         if message["action"] == "message" and message["user_id"] == self.username:
-            self.db.add_message(message["user_login"], message["body"], message["time"])
+            with self.lock:
+                self.db.add_message(
+                    message["user_login"], message["body"], message["time"]
+                )
             return f"{message['body']}"
 
         if message["action"] in ("get_contacts", "del_contact", "add_contact"):
             contacts_list = "\n".join(message["alert"])
-            self.db.update_contacts(message["alert"])
-            self.db.update_messages()
+            with self.lock:
+                self.db.update_contacts(message["alert"])
+                self.db.update_messages()
             return f"Contacts:\n{contacts_list}"
 
         if message["action"] == "status code":

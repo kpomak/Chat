@@ -5,7 +5,7 @@ from socket import AF_INET, SOCK_STREAM, socket
 
 from app.config import DEFAULT_PORT, TIMEOUT
 from app.utils import Chat, BaseVerifier
-from app.client_utils import MessageHandler
+from app.client_utils import MessageHandlerMixin
 from app.models import ClientDBase
 from log.settings.client_log_config import logger
 from log.settings.decor_log_config import Log
@@ -24,8 +24,9 @@ class ClientVerifier(BaseVerifier):
             raise TypeError("Accept or listen methods are not allowed")
 
 
-class Client(Chat, MessageHandler, metaclass=ClientVerifier):
+class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
     def __init__(self):
+        self.lock = threading.Lock()
         self.username = None
 
     @Log()
@@ -107,14 +108,19 @@ class Client(Chat, MessageHandler, metaclass=ClientVerifier):
                 if context:
                     self.send_message(self.sock, self.create_message(**context))
             else:
-                self.send_message(
-                    self.sock,
-                    self.create_message(
-                        action="message",
-                        body=message,
-                        user_id=input("Enter username of target: "),
-                    ),
+                message = self.create_message(
+                    action="message",
+                    body=message,
+                    user_id=input("Enter username of target: "),
                 )
+                with self.lock:
+                    self.db.add_message(
+                        message["user_id"],
+                        message["body"],
+                        message["time"],
+                        recieved=False,
+                    )
+                self.send_message(self.sock, message)
 
     @Log()
     def incomming(self):

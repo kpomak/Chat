@@ -118,6 +118,7 @@ class ClientDBase:
         contact = Required(str)
         message = Required(str)
         date = Required(datetime)
+        recieved = Required(bool)
         deleted = Required(bool, default=False)
 
     def __init__(self, name):
@@ -128,9 +129,12 @@ class ClientDBase:
         self.db.generate_mapping(create_tables=True)
 
     @db_session
-    def add_message(self, contact_username, message, time):
+    def add_message(self, contact_username, message, time, recieved=True):
         store = self.Messages(
-            contact=contact_username, message=message, date=datetime.fromtimestamp(time)
+            contact=contact_username,
+            message=message,
+            date=datetime.fromtimestamp(time),
+            recieved=recieved,
         )
 
     @db_session
