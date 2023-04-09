@@ -1,6 +1,6 @@
 import logging
 
-LOGGER_LEVEL = logging.INFO
+LOGGER_LEVEL = logging.ERROR
 
 DEFAULT_PORT = 7777
 
@@ -9,7 +9,7 @@ MAX_PACKAGE_LENGTH = 2048
 
 ENCODING = "utf-8"
 
-DEBUG = True
+DEBUG = False
 
 TIMEOUT = 1.0
 

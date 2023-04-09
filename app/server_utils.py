@@ -79,38 +79,40 @@ class ExchangeMessageMixin:
                 self.db.activate_client(message["user_login"])
             else:
                 result = "rejected"
-            response = self.template_message(action="login", username=result)
+            response = self.template_message(action="login", username_status=result)
 
         # get_contacts
         elif message["action"] == "get_contacts":
             response = self.template_message(
-                action="status code",
-                response="250",
+                action="get_contacts",
+                response=HTTPStatus.ACCEPTED,
                 alert=self.db.get_contacts(message["user_login"]),
             )
 
         # get_users
         elif message["action"] == "get_users":
             response = self.template_message(
-                action="status code", response="251", alert=list(self.users.usernames)
+                action="get_users",
+                response=HTTPStatus.ACCEPTED,
+                alert=list(self.users.usernames),
             )
 
         # del_contact
         elif message["action"] == "del_contact":
             self.db.del_contact(message["user_login"], message["user_id"])
             response = self.template_message(
-                action="status code",
-                response="252",
-                alert=f'Contact {message["user_id"]} deleted',
+                action="del_contact",
+                response=HTTPStatus.OK,
+                alert=self.db.get_contacts(message["user_login"]),
             )
 
         # add_contact
         elif message["action"] == "add_contact":
             self.db.add_contact(message["user_login"], message["user_id"])
             response = self.template_message(
-                action="status code",
-                response="253",
-                alert=f"Contact {message['user_id']} added to contact list",
+                action="add_contact",
+                response=HTTPStatus.CREATED,
+                alert=self.db.get_contacts(message["user_login"]),
             )
 
         # bad request
