@@ -134,10 +134,14 @@ def main():
     gui.setupUi(MainWindow)
     gui.users.setModel(gui.get_all_users(db))
     gui.users.resizeColumnsToContents()
-    gui.users.resizeRowsToContents()
     gui.history.setModel(gui.get_all_history(db))
     gui.history.resizeColumnsToContents()
-    gui.history.resizeRowsToContents()
+    gui.pushButton.pressed.connect(
+        lambda db=db: gui.users.setModel(gui.get_all_users(db))
+    )
+    gui.pushButton_3.pressed.connect(
+        lambda db=db: gui.history.setModel(gui.get_all_history(db))
+    )
 
     MainWindow.show()
     sys.exit(app.exec())

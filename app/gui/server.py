@@ -2,6 +2,9 @@ from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtGui import QStandardItem, QStandardItemModel
 
 
+from PyQt6 import QtCore, QtGui, QtWidgets
+
+
 class UiMainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -15,14 +18,20 @@ class UiMainWindow(object):
         self.widget.setAccessibleName("")
         self.widget.setObjectName("widget")
         self.users = QtWidgets.QTableView(parent=self.widget)
-        self.users.setGeometry(QtCore.QRect(0, 0, 601, 321))
+        self.users.setGeometry(QtCore.QRect(10, 10, 581, 251))
         self.users.setObjectName("users")
+        self.pushButton = QtWidgets.QPushButton(parent=self.widget)
+        self.pushButton.setGeometry(QtCore.QRect(500, 280, 89, 25))
+        self.pushButton.setObjectName("pushButton")
         self.tabWidget.addTab(self.widget, "")
         self.widget1 = QtWidgets.QWidget()
         self.widget1.setObjectName("widget1")
         self.history = QtWidgets.QTableView(parent=self.widget1)
-        self.history.setGeometry(QtCore.QRect(0, 0, 601, 321))
+        self.history.setGeometry(QtCore.QRect(10, 10, 581, 251))
         self.history.setObjectName("history")
+        self.pushButton_3 = QtWidgets.QPushButton(parent=self.widget1)
+        self.pushButton_3.setGeometry(QtCore.QRect(500, 280, 89, 25))
+        self.pushButton_3.setObjectName("pushButton_3")
         self.tabWidget.addTab(self.widget1, "")
         self.widget2 = QtWidgets.QWidget()
         self.widget2.setObjectName("widget2")
@@ -45,7 +54,7 @@ class UiMainWindow(object):
         self.label_3.setGeometry(QtCore.QRect(50, 160, 461, 31))
         self.label_3.setObjectName("label_3")
         self.pushButton_2 = QtWidgets.QPushButton(parent=self.widget2)
-        self.pushButton_2.setGeometry(QtCore.QRect(380, 110, 131, 51))
+        self.pushButton_2.setGeometry(QtCore.QRect(390, 110, 131, 51))
         self.pushButton_2.setObjectName("pushButton_2")
         self.tabWidget.addTab(self.widget2, "")
         MainWindow.setCentralWidget(self.centralwidget)
@@ -65,9 +74,11 @@ class UiMainWindow(object):
                 "MainWindow", "<html><head/><body><p>all clients</p></body></html>"
             )
         )
+        self.pushButton.setText(_translate("MainWindow", "Refresh"))
         self.tabWidget.setTabText(
             self.tabWidget.indexOf(self.widget), _translate("MainWindow", "All users")
         )
+        self.pushButton_3.setText(_translate("MainWindow", "Refresh"))
         self.tabWidget.setTabText(
             self.tabWidget.indexOf(self.widget1),
             _translate("MainWindow", "Users History"),
@@ -75,7 +86,7 @@ class UiMainWindow(object):
         self.label.setText(_translate("MainWindow", "database path"))
         self.label_2.setText(_translate("MainWindow", "ip address"))
         self.label_3.setText(_translate("MainWindow", "port"))
-        self.pushButton_2.setText(_translate("MainWindow", "Start"))
+        self.pushButton_2.setText(_translate("MainWindow", "Start server"))
         self.tabWidget.setTabText(
             self.tabWidget.indexOf(self.widget2), _translate("MainWindow", "Settings")
         )
