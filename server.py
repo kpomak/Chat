@@ -6,14 +6,14 @@ from collections import deque
 from socket import AF_INET, SOCK_STREAM, socket
 from PyQt6 import QtWidgets
 
-from app.config import DEFAULT_PORT, MAX_CONNECTIONS, TIMEOUT, DB_FILE_NAME
-from app.models import Storage
-from app.utils import Chat, BaseVerifier
-from app.server_utils import Users, ExchangeMessageMixin, NamedPort
-from app.exceptions import PortError
+from config.settigs import DEFAULT_PORT, MAX_CONNECTIONS, TIMEOUT, DB_FILE_NAME
+from server.models import Storage
+from config.utils import Chat, BaseVerifier
+from server.server_utils import Users, ExchangeMessageMixin, NamedPort
+from server.exceptions import PortError
 from log.settings.decor_log_config import Log
 from log.settings.server_log_config import logger
-from app.gui.server import UiMainWindow
+from server.gui.server import UiMainWindow
 
 
 class ServerVerifier(BaseVerifier):

@@ -3,10 +3,10 @@ import threading
 import time
 from socket import AF_INET, SOCK_STREAM, socket
 
-from app.config import DEFAULT_PORT, TIMEOUT
-from app.utils import Chat, BaseVerifier
-from app.client_utils import MessageHandlerMixin
-from app.models import ClientDBase
+from config.settigs import DEFAULT_PORT, TIMEOUT
+from config.utils import Chat, BaseVerifier
+from client.client_utils import MessageHandlerMixin
+from client.models import ClientDBase
 from log.settings.client_log_config import logger
 from log.settings.decor_log_config import Log
 
