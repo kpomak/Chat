@@ -112,7 +112,15 @@ class Storage:
 
     @db_session
     def get_all_history(self):
-        return self.ClientHistory.select()[:]
+        return [
+            (
+                client.client_id.username,
+                client.entry_date,
+                client.ip_address,
+                client.port,
+            )
+            for client in self.ClientHistory.select()
+        ]
 
 
 class ClientDBase:
