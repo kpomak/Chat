@@ -9,7 +9,7 @@ from pony.orm import (
     db_session,
     delete,
 )
-from app.config import DEBUG, DEFAULT_PORT
+from app.config import DEBUG, DEFAULT_PORT, DB_FILE_NAME
 
 
 class Storage:
@@ -40,7 +40,7 @@ class Storage:
         contact_id = Required(lambda: Storage.Client)
 
     def __init__(self):
-        self.db.bind(provider="sqlite", filename="../db.sqlite3", create_db=True)
+        self.db.bind(provider="sqlite", filename=f"../{DB_FILE_NAME}", create_db=True)
         set_sql_debug(DEBUG)
         self.db.generate_mapping(create_tables=True)
 
@@ -139,7 +139,7 @@ class ClientDBase:
 
     def __init__(self, name):
         self.db.bind(
-            provider="sqlite", filename=f"../db.{name}.sqlite3", create_db=True
+            provider="sqlite", filename=f"../{name}.{DB_FILE_NAME}", create_db=True
         )
         set_sql_debug(DEBUG)
         self.db.generate_mapping(create_tables=True)

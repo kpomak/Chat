@@ -4,9 +4,9 @@ import os
 import sys
 from collections import deque
 from socket import AF_INET, SOCK_STREAM, socket
-from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtWidgets
 
-from app.config import DEFAULT_PORT, MAX_CONNECTIONS, TIMEOUT
+from app.config import DEFAULT_PORT, MAX_CONNECTIONS, TIMEOUT, DB_FILE_NAME
 from app.models import Storage
 from app.utils import Chat, BaseVerifier
 from app.server_utils import Users, ExchangeMessageMixin, NamedPort
@@ -142,7 +142,7 @@ def main():
     gui.pushButton_3.pressed.connect(
         lambda db=db: gui.history.setModel(gui.get_all_history(db))
     )
-    gui.get_settings(os.path.join(os.getcwd(), "db.sqlite"), runner.sock.getsockname())
+    gui.get_settings(os.path.join(os.getcwd(), DB_FILE_NAME), runner.sock.getsockname())
     MainWindow.show()
     sys.exit(app.exec())
 

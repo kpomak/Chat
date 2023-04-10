@@ -93,14 +93,13 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
     def outgoing(self):
         while message := input(
             "\nEnter message or command from list below:"
-            "\n(/get_contacts, /get_users, /add_contact, /del_contact, /exit)\n"
+            "\n(/get_contacts, /get_users, /add_contact, /del_contact)"
+            "\nFor exit leave empty and press Enter\n"
         ):
             if message.startswith("/"):
                 context = {}
                 message = message[1:]
-                if message == "exit":
-                    break
-                elif message in ("get_contacts", "get_users"):
+                if message in ("get_contacts", "get_users"):
                     context["action"] = message
                 elif message in ("add_contact", "del_contact"):
                     context["action"] = message
