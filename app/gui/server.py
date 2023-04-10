@@ -95,6 +95,28 @@ class UiMainWindow(object):
             table.appendRow([user_id, username, is_active])
         return table
 
+    def get_all_history(self, db):
+        history = db.get_all_history()
+        table = QStandardItemModel()
+        table.setHorizontalHeaderLabels(["User ID", "Entry date", "IP", "Port"])
+        for mem in history:
+            user_id, entry_date, ip_address, port = (
+                mem.id,
+                mem.entry_date,
+                mem.ip_address,
+                mem.port,
+            )
+            entry_date = QStandardItem(str(entry_date))
+            entry_date.setEditable(False)
+            user_id = QStandardItem(str(user_id))
+            user_id.setEditable(False)
+            port = QStandardItem(str(port))
+            port.setEditable(False)
+            ip_address = QStandardItem(ip_address)
+            ip_address.setEditable(False)
+            table.appendRow([user_id, entry_date, ip_address, port])
+        return table
+
 
 if __name__ == "__main__":
     import sys
