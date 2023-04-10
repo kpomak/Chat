@@ -1,5 +1,6 @@
 import select
 import threading
+import os
 import sys
 from collections import deque
 from socket import AF_INET, SOCK_STREAM, socket
@@ -46,15 +47,14 @@ class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
 
     @Log()
     def init_socket(self):
-        sock = socket(AF_INET, SOCK_STREAM)
+        self.sock = socket(AF_INET, SOCK_STREAM)
         address, self.port = self.parse_params
-        sock.bind((address, self.port))
-        sock.settimeout(TIMEOUT)
-        sock.listen(MAX_CONNECTIONS)
+        self.sock.bind((address, self.port))
+        self.sock.settimeout(TIMEOUT)
+        self.sock.listen(MAX_CONNECTIONS)
         logger.info(
             f"Socket was succefully created with max average of connections: {MAX_CONNECTIONS}"
         )
-        return sock
 
     @Log()
     def disconnect_client(self, client):
@@ -89,7 +89,7 @@ class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
     @Log()
     def run(self):
         try:
-            sock = self.init_socket()
+            self.init_socket()
         except PortError as p:
             logger.critical(f"Yuyachiy! Sinchi pantay tarisqa {p}")
             sys.exit(1)
@@ -106,7 +106,7 @@ class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
 
         while True:
             try:
-                client, addr = sock.accept()
+                client, addr = self.sock.accept()
             except OSError:
                 pass
             else:
@@ -142,7 +142,7 @@ def main():
     gui.pushButton_3.pressed.connect(
         lambda db=db: gui.history.setModel(gui.get_all_history(db))
     )
-
+    gui.get_settings(os.path.join(os.getcwd(), "db.sqlite"), runner.sock.getsockname())
     MainWindow.show()
     sys.exit(app.exec())
 

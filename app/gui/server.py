@@ -36,26 +36,27 @@ class UiMainWindow(object):
         self.widget2 = QtWidgets.QWidget()
         self.widget2.setObjectName("widget2")
         self.lineEdit = QtWidgets.QLineEdit(parent=self.widget2)
-        self.lineEdit.setGeometry(QtCore.QRect(50, 50, 251, 25))
+        self.lineEdit.setGeometry(QtCore.QRect(200, 50, 361, 25))
         self.lineEdit.setObjectName("lineEdit")
         self.lineEdit_2 = QtWidgets.QLineEdit(parent=self.widget2)
-        self.lineEdit_2.setGeometry(QtCore.QRect(50, 120, 251, 25))
+        self.lineEdit_2.setGeometry(QtCore.QRect(200, 100, 361, 25))
         self.lineEdit_2.setObjectName("lineEdit_2")
         self.lineEdit_3 = QtWidgets.QLineEdit(parent=self.widget2)
-        self.lineEdit_3.setGeometry(QtCore.QRect(50, 190, 251, 25))
+        self.lineEdit_3.setGeometry(QtCore.QRect(200, 150, 361, 25))
         self.lineEdit_3.setObjectName("lineEdit_3")
         self.label = QtWidgets.QLabel(parent=self.widget2)
-        self.label.setGeometry(QtCore.QRect(50, 20, 461, 31))
+        self.label.setGeometry(QtCore.QRect(50, 50, 461, 31))
         self.label.setObjectName("label")
         self.label_2 = QtWidgets.QLabel(parent=self.widget2)
-        self.label_2.setGeometry(QtCore.QRect(50, 90, 461, 31))
+        self.label_2.setGeometry(QtCore.QRect(50, 100, 461, 31))
         self.label_2.setObjectName("label_2")
         self.label_3 = QtWidgets.QLabel(parent=self.widget2)
-        self.label_3.setGeometry(QtCore.QRect(50, 160, 461, 31))
+        self.label_3.setGeometry(QtCore.QRect(50, 150, 461, 31))
         self.label_3.setObjectName("label_3")
-        self.pushButton_2 = QtWidgets.QPushButton(parent=self.widget2)
-        self.pushButton_2.setGeometry(QtCore.QRect(390, 110, 131, 51))
-        self.pushButton_2.setObjectName("pushButton_2")
+        self.pushButton_4 = QtWidgets.QPushButton(parent=self.widget2)
+        self.pushButton_4.setGeometry(QtCore.QRect(500, 280, 89, 25))
+        self.pushButton_4.setObjectName("pushButton_4")
+        self.pushButton_4.pressed.connect(QtWidgets.QApplication.quit)
         self.tabWidget.addTab(self.widget2, "")
         MainWindow.setCentralWidget(self.centralwidget)
         self.statusbar = QtWidgets.QStatusBar(parent=MainWindow)
@@ -83,10 +84,10 @@ class UiMainWindow(object):
             self.tabWidget.indexOf(self.widget1),
             _translate("MainWindow", "Users History"),
         )
-        self.label.setText(_translate("MainWindow", "database path"))
-        self.label_2.setText(_translate("MainWindow", "ip address"))
-        self.label_3.setText(_translate("MainWindow", "port"))
-        self.pushButton_2.setText(_translate("MainWindow", "Start server"))
+        self.label.setText(_translate("MainWindow", "Database path"))
+        self.label_2.setText(_translate("MainWindow", "IP address"))
+        self.label_3.setText(_translate("MainWindow", "Port"))
+        self.pushButton_4.setText(_translate("MainWindow", "Quit"))
         self.tabWidget.setTabText(
             self.tabWidget.indexOf(self.widget2), _translate("MainWindow", "Settings")
         )
@@ -123,6 +124,11 @@ class UiMainWindow(object):
             ip_address.setEditable(False)
             table.appendRow([user_id, entry_date, ip_address, port])
         return table
+
+    def get_settings(self, db_path, ip_config):
+        self.lineEdit.insert(db_path)
+        self.lineEdit_2.insert(ip_config[0])
+        self.lineEdit_3.insert(str(ip_config[1]))
 
 
 if __name__ == "__main__":
