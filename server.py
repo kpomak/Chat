@@ -1,4 +1,5 @@
 import select
+import threading
 import sys
 from collections import deque
 from socket import AF_INET, SOCK_STREAM, socket
@@ -25,11 +26,11 @@ class ServerVerifier(BaseVerifier):
 class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
     port = NamedPort("server_port", DEFAULT_PORT)
 
-    def __init__(self):
+    def __init__(self, db):
         self.users = Users()
         self.messages = deque()
         self.dispatcher = select.poll()
-        self.db = Storage()
+        self.db = db
 
     @property
     @Log()
@@ -120,13 +121,18 @@ class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
 
 
 def main():
-    server = Server()
-    server.run()
+    db = Storage()
+    runner = Server(db=db)
+
+    server = threading.Thread(target=runner.run)
+    server.daemon = True
+    server.start()
+
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     gui = UiMainWindow()
     gui.setupUi(MainWindow)
-    gui.users.setModel(gui.get_all_users(server.db))
+    gui.users.setModel(gui.get_all_users(db))
     gui.users.resizeColumnsToContents()
     gui.users.resizeRowsToContents()
 

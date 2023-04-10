@@ -106,6 +106,14 @@ class Storage:
             if record.owner_id == client and record.contact_id == contact
         )
 
+    @db_session
+    def get_all_clients(self):
+        return self.Client.select()[:]
+
+    @db_session
+    def get_all_history(self):
+        return self.ClientHistory.select()[:]
+
 
 class ClientDBase:
     db = Database()
