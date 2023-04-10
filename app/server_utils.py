@@ -56,10 +56,10 @@ class Users:
 class ExchangeMessageMixin:
     def exchange_service(self, message, events):
         # p2p delivery
-        if message["action"] == "msg" and "to_user" in message:
+        if message["action"] == "message" and "user_id" in message:
             for client, event in events:
                 if (
-                    message["to_user"] == self.users.get_username(client)
+                    message["user_id"] == self.users.get_username(client)
                     and event & select.POLLOUT
                 ):
                     return client, message
@@ -72,19 +72,59 @@ class ExchangeMessageMixin:
 
         # sign up message
         elif message["action"] == "login":
-            username = message["user"].get("username")
-            response = self.template_message(
-                action="login",
-                username="accepted"
-                if username not in self.users.usernames
-                else "rejected",
-            )
-            self.users.usernames[username] = message["client"]
+            username = message["user_login"]
+            if username not in self.users.usernames:
+                fileno = message["client"]
+                socket = self.users.sockets[fileno]
+                ip_address, port = socket.getpeername()
+                self.users.usernames[username] = fileno
+                self.db.activate_client(
+                    message["user_login"],
+                    ip_address=ip_address,
+                    port=port,
+                )
+                result = "accepted"
+            else:
+                result = "rejected"
+            response = self.template_message(action="login", username_status=result)
 
-        # commands
-        elif message["action"] == "commands" and message["body"] == "/users_list":
+        # get_contacts
+        elif message["action"] == "get_contacts":
             response = self.template_message(
-                action="notification", response=list(self.users.usernames.keys())
+                action="get_contacts",
+                response=HTTPStatus.ACCEPTED,
+                alert=self.db.get_contacts(message["user_login"]),
+            )
+
+        # get_users
+        elif message["action"] == "get_users":
+            users = self.db.get_all_clients()
+            response = self.template_message(
+                action="get_users",
+                response=HTTPStatus.ACCEPTED,
+                alert={
+                    user.username: user.is_active
+                    for user in users
+                    if message["user_login"] != user.username
+                },
+            )
+
+        # del_contact
+        elif message["action"] == "del_contact":
+            self.db.del_contact(message["user_login"], message["user_id"])
+            response = self.template_message(
+                action="del_contact",
+                response=HTTPStatus.OK,
+                alert=self.db.get_contacts(message["user_login"]),
+            )
+
+        # add_contact
+        elif message["action"] == "add_contact":
+            self.db.add_contact(message["user_login"], message["user_id"])
+            response = self.template_message(
+                action="add_contact",
+                response=HTTPStatus.CREATED,
+                alert=self.db.get_contacts(message["user_login"]),
             )
 
         # bad request

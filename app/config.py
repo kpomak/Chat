@@ -7,11 +7,13 @@ DEFAULT_PORT = 7777
 MAX_CONNECTIONS = 16
 MAX_PACKAGE_LENGTH = 2048
 
+DB_FILE_NAME = "db.sqlite3"
+
 ENCODING = "utf-8"
 
-DEBUG = True
+DEBUG = False
 
-TIMEOUT = 1.0
+TIMEOUT = 0.5
 
 ERRORS = [
     "Your lack of attention to detail is so abysmal, you make a sloth look like a speed demon.",

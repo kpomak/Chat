@@ -5,11 +5,13 @@ from socket import AF_INET, SOCK_STREAM, socket
 
 from app.config import DEFAULT_PORT, TIMEOUT
 from app.utils import Chat, BaseVerifier
+from app.client_utils import MessageHandlerMixin
+from app.models import ClientDBase
 from log.settings.client_log_config import logger
 from log.settings.decor_log_config import Log
 
 
-class ServerVerifier(BaseVerifier):
+class ClientVerifier(BaseVerifier):
     def __init__(cls, name, bases, namespaces):
         super().__init__(name, bases, namespaces)
 
@@ -22,33 +24,15 @@ class ServerVerifier(BaseVerifier):
             raise TypeError("Accept or listen methods are not allowed")
 
 
-class Client(Chat, metaclass=ServerVerifier):
+class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
     def __init__(self):
+        self.lock = threading.Lock()
         self.username = None
 
     @Log()
-    def parse_message(self, message):
-        logger.info(f"Parsing messagefrom server: {message}")
-
-        if message["action"] == "login":
-            return message["username"]
-
-        if message["action"] == "notification":
-            return f'{message["response"]}'
-
-        if message["action"] == "msg" and message["to_user"] == self.username:
-            return f"{message['body']}"
-
-        if message["action"] == "status code":
-            if message["response"] < 400:
-                return f'{message["response"]}: {message["alert"]}'
-            return f'{message["response"]}: {message["error"]}'
-
-    @Log()
     def create_message(self, **kwargs):
-        user = {"username": self.username, "status": "online"}
-        logger.info(f"Creating message from user {user['username']}")
-        return self.template_message(type="status", user=user, **kwargs)
+        logger.info(f"Creating message from user {self.username}")
+        return self.template_message(user_login=self.username, **kwargs)
 
     @Log()
     def presence(self):
@@ -96,33 +80,46 @@ class Client(Chat, metaclass=ServerVerifier):
     @Log()
     def set_username(self):
         while not self.username:
-            self.username = input("Enter your username ")
+            self.username = input("Enter your username: ")
             message = self.create_message(action="login")
             self.send_message(self.sock, message)
             if self.recieve_message() == "rejected":
                 print(f"Sorry, username {self.username} is busy :(")
                 self.username = None
+        self.db = ClientDBase(self.username)
+        self.send_message(self.sock, self.create_message(action="get_contacts"))
 
     @Log()
     def outgoing(self):
         while message := input(
-            'Enter message or command "/users_list"\nLeave empty and press Enter for exit'
+            "\nEnter message or command from list below:"
+            "\n(/get_contacts, /get_users, /add_contact, /del_contact)"
+            "\nFor exit leave empty and press Enter\n"
         ):
-            if not message:
-                break
-            elif message == "/users_list":
-                self.send_message(
-                    self.sock, self.create_message(action="commands", body=message)
-                )
+            if message.startswith("/"):
+                context = {}
+                message = message[1:]
+                if message in ("get_contacts", "get_users"):
+                    context["action"] = message
+                elif message in ("add_contact", "del_contact"):
+                    context["action"] = message
+                    context["user_id"] = input("Enter username of target: ")
+                if context:
+                    self.send_message(self.sock, self.create_message(**context))
             else:
-                self.send_message(
-                    self.sock,
-                    self.create_message(
-                        action="msg",
-                        body=message,
-                        to_user=input("Enter username of target "),
-                    ),
+                message = self.create_message(
+                    action="message",
+                    body=message,
+                    user_id=input("Enter username of target: "),
                 )
+                with self.lock:
+                    self.db.add_message(
+                        message["user_id"],
+                        message["body"],
+                        message["time"],
+                        recieved=False,
+                    )
+                self.send_message(self.sock, message)
 
     @Log()
     def incomming(self):

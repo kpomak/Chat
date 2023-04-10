@@ -52,8 +52,7 @@ class Chat:
 
     @staticmethod
     def template_message(**kwargs):
-        action = kwargs["action"] if "action" in kwargs else "msg"
-        message = {"action": action, "time": time.time()}
+        message = {"time": time.time()}
         for key, value in kwargs.items():
             message[key] = value
         return message

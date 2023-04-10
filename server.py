@@ -1,14 +1,19 @@
 import select
+import threading
+import os
 import sys
 from collections import deque
 from socket import AF_INET, SOCK_STREAM, socket
+from PyQt6 import QtWidgets
 
-from app.config import DEFAULT_PORT, MAX_CONNECTIONS, TIMEOUT
+from app.config import DEFAULT_PORT, MAX_CONNECTIONS, TIMEOUT, DB_FILE_NAME
+from app.models import Storage
 from app.utils import Chat, BaseVerifier
 from app.server_utils import Users, ExchangeMessageMixin, NamedPort
 from app.exceptions import PortError
 from log.settings.decor_log_config import Log
 from log.settings.server_log_config import logger
+from app.gui.server import UiMainWindow
 
 
 class ServerVerifier(BaseVerifier):
@@ -22,10 +27,11 @@ class ServerVerifier(BaseVerifier):
 class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
     port = NamedPort("server_port", DEFAULT_PORT)
 
-    def __init__(self):
+    def __init__(self, db):
         self.users = Users()
         self.messages = deque()
         self.dispatcher = select.poll()
+        self.db = db
 
     @property
     @Log()
@@ -41,20 +47,21 @@ class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
 
     @Log()
     def init_socket(self):
-        sock = socket(AF_INET, SOCK_STREAM)
+        self.sock = socket(AF_INET, SOCK_STREAM)
         address, self.port = self.parse_params
-        sock.bind((address, self.port))
-        sock.settimeout(TIMEOUT)
-        sock.listen(MAX_CONNECTIONS)
+        self.sock.bind((address, self.port))
+        self.sock.settimeout(TIMEOUT)
+        self.sock.listen(MAX_CONNECTIONS)
         logger.info(
             f"Socket was succefully created with max average of connections: {MAX_CONNECTIONS}"
         )
-        return sock
 
     @Log()
     def disconnect_client(self, client):
         logger.info(f"Client {client} disconnected")
         self.dispatcher.unregister(self.users.sockets[client])
+        if self.users.get_username(client):
+            self.db.deactivate_client(self.users.get_username(client))
         self.users.sockets[client].close()
         self.users.delete_user(client)
 
@@ -82,7 +89,7 @@ class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
     @Log()
     def run(self):
         try:
-            sock = self.init_socket()
+            self.init_socket()
         except PortError as p:
             logger.critical(f"Yuyachiy! Sinchi pantay tarisqa {p}")
             sys.exit(1)
@@ -94,10 +101,12 @@ class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
                 f"Achtung!!! Ein kritischer Fehler wurde bemerkt! Was ist los? {self.get_error}"
             )
             sys.exit(1)
+        else:
+            print("The Server is running")
 
         while True:
             try:
-                client, addr = sock.accept()
+                client, addr = self.sock.accept()
             except OSError:
                 pass
             else:
@@ -111,6 +120,32 @@ class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
                 self.check_messages(events)
 
 
+def main():
+    db = Storage()
+    runner = Server(db=db)
+
+    server = threading.Thread(target=runner.run)
+    server.daemon = True
+    server.start()
+
+    app = QtWidgets.QApplication(sys.argv)
+    MainWindow = QtWidgets.QMainWindow()
+    gui = UiMainWindow()
+    gui.setupUi(MainWindow)
+    gui.users.setModel(gui.get_all_users(db))
+    gui.users.resizeColumnsToContents()
+    gui.history.setModel(gui.get_all_history(db))
+    gui.history.resizeColumnsToContents()
+    gui.pushButton.pressed.connect(
+        lambda db=db: gui.users.setModel(gui.get_all_users(db))
+    )
+    gui.pushButton_3.pressed.connect(
+        lambda db=db: gui.history.setModel(gui.get_all_history(db))
+    )
+    gui.get_settings(os.path.join(os.getcwd(), DB_FILE_NAME), runner.sock.getsockname())
+    MainWindow.show()
+    sys.exit(app.exec())
+
+
 if __name__ == "__main__":
-    server = Server()
-    server.run()
+    main()
