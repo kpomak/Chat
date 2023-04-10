@@ -14,7 +14,7 @@ class MessageHandlerMixin:
             return message["username_status"]
 
         if message["action"] == "get_users":
-            users_list = "\n".join(message["alert"])
+            users_list = "\n".join(str(item) for item in message["alert"].items())
             return f"Active users:\n{users_list}"
 
         if message["action"] == "message" and message["user_id"] == self.username:

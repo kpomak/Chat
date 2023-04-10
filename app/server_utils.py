@@ -98,10 +98,15 @@ class ExchangeMessageMixin:
 
         # get_users
         elif message["action"] == "get_users":
+            users = self.db.get_all_clients()
             response = self.template_message(
                 action="get_users",
                 response=HTTPStatus.ACCEPTED,
-                alert=list(self.users.usernames),
+                alert={
+                    user.username: user.is_active
+                    for user in users
+                    if message["user_login"] != user.username
+                },
             )
 
         # del_contact

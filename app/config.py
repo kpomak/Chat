@@ -13,7 +13,7 @@ ENCODING = "utf-8"
 
 DEBUG = False
 
-TIMEOUT = 1.0
+TIMEOUT = 0.5
 
 ERRORS = [
     "Your lack of attention to detail is so abysmal, you make a sloth look like a speed demon.",
