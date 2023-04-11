@@ -1,8 +1,7 @@
+import sys
+
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtGui import QStandardItem, QStandardItemModel
-
-
-from PyQt6 import QtCore, QtGui, QtWidgets
 
 
 class UiMainWindow(object):
@@ -127,8 +126,6 @@ class UiMainWindow(object):
 
 
 if __name__ == "__main__":
-    import sys
-
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = UiMainWindow()

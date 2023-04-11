@@ -2,6 +2,8 @@ import sys
 import threading
 import time
 from socket import AF_INET, SOCK_STREAM, socket
+from PyQt6 import QtCore, QtWidgets
+from client.gui import welcome
 
 from config.settigs import DEFAULT_PORT, TIMEOUT
 from config.utils import Chat, BaseVerifier
@@ -78,16 +80,23 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
             return self.parse_message(message)
 
     @Log()
-    def set_username(self):
+    def set_username(self, app):
         while not self.username:
+            Dialog = QtWidgets.QDialog()
+            dialog = welcome.UiDialog()
+            dialog.setupUi(Dialog)
+            Dialog.show()
+            app.exec()
             self.username = input("Enter your username: ")
             message = self.create_message(action="login")
             self.send_message(self.sock, message)
             if self.recieve_message() == "rejected":
                 print(f"Sorry, username {self.username} is busy :(")
                 self.username = None
-        self.db = ClientDBase(self.username)
-        self.send_message(self.sock, self.create_message(action="get_contacts"))
+
+    def connect_db(self, db):
+        self.db = db
+        self.send_message(self.sock, self.create_message(action="get_users"))
 
     @Log()
     def outgoing(self):
@@ -143,8 +152,16 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
             break
 
 
-if __name__ == "__main__":
+def main():
+    app = QtWidgets.QApplication(sys.argv)
+
     client = Client()
     client.run()
-    client.set_username()
+    client.set_username(app)
+    db = ClientDBase(client.username)
+    client.connect_db(db)
     client.main_loop()
+
+
+if __name__ == "__main__":
+    main()
