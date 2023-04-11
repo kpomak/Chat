@@ -1,31 +1,34 @@
 import sys
-from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtCore, QtWidgets, QtGui
 
 
-class UiDialog(object):
-    def setupUi(self, Dialog):
-        Dialog.setObjectName("Dialog")
-        Dialog.resize(300, 200)
-        self.pushButton = QtWidgets.QPushButton(parent=Dialog)
+class UiDialog(QtWidgets.QDialog):
+    def __init__(self):
+        super().__init__()
+
+    def setupUi(self):
+        self.setObjectName("Dialog")
+        self.resize(300, 200)
+        self.pushButton = QtWidgets.QPushButton(self)
         self.pushButton.setGeometry(QtCore.QRect(110, 80, 89, 25))
         self.pushButton.setObjectName("pushButton")
-        self.lineEdit = QtWidgets.QLineEdit(parent=Dialog)
+        self.pushButton.pressed.connect(QtWidgets.QApplication.quit)
+        self.lineEdit = QtWidgets.QLineEdit(self)
         self.lineEdit.setGeometry(QtCore.QRect(20, 40, 261, 25))
         self.lineEdit.setObjectName("lineEdit")
-        self.label = QtWidgets.QLabel(parent=Dialog)
+        self.label = QtWidgets.QLabel(self)
         self.label.setGeometry(QtCore.QRect(20, 10, 260, 20))
         self.label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.label.setObjectName("label")
-        self.textBrowser = QtWidgets.QTextBrowser(parent=Dialog)
+        self.textBrowser = QtWidgets.QTextBrowser(self)
         self.textBrowser.setGeometry(QtCore.QRect(20, 120, 260, 61))
         self.textBrowser.setObjectName("textBrowser")
 
-        self.retranslateUi(Dialog)
-        QtCore.QMetaObject.connectSlotsByName(Dialog)
+        self.retranslateUi()
 
-    def retranslateUi(self, Dialog):
+    def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Welcome to DevChat"))
+        self.setWindowTitle(_translate("Dialog", "Welcome to DevChat"))
         self.pushButton.setText(_translate("Dialog", "Sign in"))
         self.label.setText(_translate("Dialog", "Enter username"))
         self.textBrowser.setHtml(
@@ -42,12 +45,19 @@ class UiDialog(object):
             )
         )
 
+    def input_username(self, message):
+        self.lineEdit.clear()
+        self.textBrowser.clear()
+        self.textBrowser.insertPlainText(message)
+        self.show()
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
-    Dialog = QtWidgets.QDialog()
     ui = UiDialog()
-    ui.setupUi(Dialog)
-    ui.textBrowser.insertPlainText("Username is buzy")
-    Dialog.show()
-    sys.exit(app.exec())
+    ui.setupUi()
+    username = "Some text"
+    while username:
+        ui.input_username(username)
+        app.exec()
+        username = ui.lineEdit.text()

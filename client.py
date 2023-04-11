@@ -81,17 +81,19 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
 
     @Log()
     def set_username(self, app):
+        dialog = welcome.UiDialog()
+        dialog.setupUi()
+        error = ""
         while not self.username:
-            Dialog = QtWidgets.QDialog()
-            dialog = welcome.UiDialog()
-            dialog.setupUi(Dialog)
-            Dialog.show()
+            dialog.input_username(error)
             app.exec()
-            self.username = input("Enter your username: ")
+            # self.username = input("Enter your username: ")
+            self.username = dialog.lineEdit.text()
             message = self.create_message(action="login")
             self.send_message(self.sock, message)
             if self.recieve_message() == "rejected":
-                print(f"Sorry, username {self.username} is busy :(")
+                error = f"Sorry, username {self.username} is busy :("
+                # print(f"Sorry, username {self.username} is busy :(")
                 self.username = None
 
     def connect_db(self, db):
@@ -154,7 +156,6 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
-
     client = Client()
     client.run()
     client.set_username(app)
