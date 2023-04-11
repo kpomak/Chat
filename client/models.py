@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pony.orm import Required, Database, set_sql_debug, db_session
+from pony.orm import Required, Database, set_sql_debug, db_session, delete
 
 from config.settigs import DEBUG, DB_FILE_NAME
 
@@ -19,6 +19,11 @@ class ClientDBase:
         recieved = Required(bool)
         deleted = Required(bool, default=False)
 
+    class AllUsers(db.Entity):
+        username = Required(str)
+        is_active = Required(bool)
+        is_contact = Required(bool)
+
     def __init__(self, name):
         self.db.bind(
             provider="sqlite", filename=f"../{name}.{DB_FILE_NAME}", create_db=True
@@ -34,6 +39,20 @@ class ClientDBase:
             date=datetime.fromtimestamp(time),
             recieved=recieved,
         )
+
+    @db_session
+    def get_users(self):
+        return self.AllUsers.select()[:]
+
+    @db_session
+    def set_users(self, clients):
+        delete(user for user in self.AllUsers.select())
+        for client in clients:
+            user = self.AllUsers(
+                username=client["username"],
+                is_active=client["is_active"],
+                is_contact=client["is_contact"],
+            )
 
     @db_session
     def update_contacts(self, users_list):

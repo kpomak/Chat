@@ -87,13 +87,11 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
         while not self.username:
             dialog.input_username(error)
             app.exec()
-            # self.username = input("Enter your username: ")
             self.username = dialog.lineEdit.text()
             message = self.create_message(action="login")
             self.send_message(self.sock, message)
             if self.recieve_message() == "rejected":
                 error = f"Sorry, username {self.username} is busy :("
-                # print(f"Sorry, username {self.username} is busy :(")
                 self.username = None
 
     def connect_db(self, db):

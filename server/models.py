@@ -107,8 +107,22 @@ class Storage:
         )
 
     @db_session
-    def get_all_clients(self):
+    def get_all_users(self):
         return self.Client.select()[:]
+
+    @db_session
+    def get_all_clients(self, username):
+        clients = self.Client.select()
+        contacts = self.get_contacts(username)
+        return [
+            {
+                "username": client.username,
+                "is_active": client.is_active,
+                "is_contact": True if client.username in contacts else False,
+            }
+            for client in clients
+            if client.username != username
+        ]
 
     @db_session
     def get_all_history(self):

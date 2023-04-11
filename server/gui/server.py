@@ -87,7 +87,7 @@ class UiMainWindow(object):
         )
 
     def get_all_users(self, db):
-        users = db.get_all_clients()
+        users = db.get_all_users()
         table = QStandardItemModel()
         table.setHorizontalHeaderLabels(["User ID", "Username", "On-line"])
         for user in users:
