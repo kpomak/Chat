@@ -1,16 +1,19 @@
 from queue import Queue
-from PyQt6.QtCore import QThread, QObject, pyqtSignal, Qt
+from PyQt6.QtCore import QThread, QObject, pyqtSignal, Qt, pyqtSlot
 from PyQt6.QtGui import QStandardItem, QStandardItemModel, QFont
 from client.gui.client_window import Ui_MainWindow
 
 
-class Worker(QObject):
-    got_message = pyqtSignal(dict)
+class Receiver(QObject):
+    got_message = pyqtSignal()
 
-    def __init__(self):
+    def __init__(self, client):
         super().__init__()
-        self.in_queue = Queue()
-        self.out_quene = Queue()
+        self.client = client
+
+    def receive(self):
+        while message := self.client.receive_message():
+            self.got_message.emit()
 
 
 class MainClientGui(Ui_MainWindow):
@@ -21,6 +24,11 @@ class MainClientGui(Ui_MainWindow):
         self.setupUi()
         self.listView.doubleClicked.connect(self.select_chat)
         self.update_users()
+
+    @pyqtSlot()
+    def incomming_message(self):
+        self.update_users()
+        self.update_messages()
 
     def update_users(self):
         users = self.db.get_users()
@@ -53,3 +61,11 @@ class MainClientGui(Ui_MainWindow):
                     else Qt.AlignmentFlag.AlignRight
                 )
                 self.messages.appendRow(row)
+
+    def start_messaging(self):
+        self.receiver = Receiver(self.client)
+        self.receiver.got_message.connect(self.incomming_message)
+        self.recv_thread = QThread()
+        self.receiver.moveToThread(self.recv_thread)
+        self.recv_thread.started.connect(self.receiver.receive)
+        self.recv_thread.start()

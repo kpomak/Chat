@@ -5,7 +5,7 @@ from socket import AF_INET, SOCK_STREAM, socket
 
 from client.client_utils import MessageHandlerMixin
 from client.gui import welcome
-from config.settigs import DEFAULT_PORT, TIMEOUT
+from config.settigs import DEFAULT_PORT, CHECK_TIMEOUT
 from config.utils import BaseVerifier, Chat
 from log.settings.client_log_config import logger
 from log.settings.decor_log_config import Log
@@ -67,14 +67,14 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
             sys.exit(1)
 
     @Log()
-    def recieve_message(self):
+    def receive_message(self):
         try:
             message = self.get_message(self.sock)
         except Exception:
-            logger.critical("Fatal error by recieving message")
+            logger.critical("Fatal error by receiving message")
             sys.exit(1)
         else:
-            logger.info(f"Recieved message {message}")
+            logger.info(f"Received message {message}")
             return self.parse_message(message)
 
     @Log()
@@ -88,7 +88,7 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
             self.username = dialog.lineEdit.text()
             message = self.create_message(action="login")
             self.send_message(self.sock, message)
-            if self.recieve_message() == "rejected":
+            if self.receive_message() == "rejected":
                 error = f"Sorry, username {self.username} is busy :("
                 self.username = None
 
@@ -124,13 +124,13 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
                         message["user_id"],
                         message["body"],
                         message["time"],
-                        recieved=False,
+                        received=False,
                     )
                 self.send_message(self.sock, message)
 
     @Log()
     def incomming(self):
-        while message := self.recieve_message():
+        while message := self.receive_message():
             print(message)
 
     @Log()
@@ -139,12 +139,12 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
         transmitter.daemon = True
         transmitter.start()
 
-        reciever = threading.Thread(target=self.incomming)
-        reciever.daemon = True
-        reciever.start()
+        receiver = threading.Thread(target=self.incomming)
+        receiver.daemon = True
+        receiver.start()
 
         while True:
-            time.sleep(TIMEOUT)
-            if transmitter.is_alive() and reciever.is_alive():
+            time.sleep(CHECK_TIMEOUT)
+            if transmitter.is_alive() and receiver.is_alive():
                 continue
             break
