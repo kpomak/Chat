@@ -16,13 +16,29 @@ class Receiver(QObject):
             self.got_message.emit()
 
 
+class Transmitter(QObject):
+    def __init__(self, client, queue):
+        super().__init__()
+        self.client = client
+        self.queue = queue
+
+    def transmit(self):
+        while message := self.queue.get():
+            self.client.outgoing(message)
+            self.queue.task_done()
+
+
 class MainClientGui(Ui_MainWindow):
     def __init__(self, db, client):
         super().__init__()
         self.db = db
+        self.chat = None
         self.client = client
+        self.queue = Queue()
         self.setupUi()
         self.listView.doubleClicked.connect(self.select_chat)
+        self.pushButton.pressed.connect(self.send_to_user)
+        self.pushButton.pressed.connect(self.textEdit.clear)
         self.update_users()
 
     @pyqtSlot()
@@ -69,3 +85,25 @@ class MainClientGui(Ui_MainWindow):
         self.receiver.moveToThread(self.recv_thread)
         self.recv_thread.started.connect(self.receiver.receive)
         self.recv_thread.start()
+
+        self.transmitter = Transmitter(self.client, self.queue)
+        self.trans_tread = QThread()
+        self.transmitter.moveToThread(self.trans_tread)
+        self.trans_tread.started.connect(self.transmitter.transmit)
+        self.trans_tread.start()
+
+        self.show()
+
+    def send_to_user(self):
+        user_id = self.chat
+        message = self.textEdit.toPlainText()
+        if not message or not user_id:
+            return
+        self.queue.put(
+            {
+                "action": "message",
+                "user_id": user_id,
+                "body": message,
+            }
+        )
+        self.update_messages()

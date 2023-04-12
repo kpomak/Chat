@@ -97,36 +97,33 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
         self.send_message(self.sock, self.create_message(action="get_users"))
 
     @Log()
-    def outgoing(self):
-        while message := input(
-            "\nEnter message or command from list below:"
-            "\n(/get_contacts, /get_users, /add_contact, /del_contact)"
-            "\nFor exit leave empty and press Enter\n"
-        ):
-            if message.startswith("/"):
-                context = {}
-                message = message[1:]
-                if message in ("get_contacts", "get_users"):
-                    context["action"] = message
-                elif message in ("add_contact", "del_contact"):
-                    context["action"] = message
-                    context["user_id"] = input("Enter username of target: ")
-                if context:
-                    self.send_message(self.sock, self.create_message(**context))
-            else:
-                message = self.create_message(
-                    action="message",
-                    body=message,
-                    user_id=input("Enter username of target: "),
+    def outgoing(self, message):
+        if isinstance(message, dict):
+            message = self.create_message(
+                action="message",
+                body=message["body"],
+                user_id=message["user_id"],
+            )
+            with self.lock:
+                self.db.add_message(
+                    message["user_id"],
+                    message["body"],
+                    message["time"],
+                    recieved=False,
                 )
-                with self.lock:
-                    self.db.add_message(
-                        message["user_id"],
-                        message["body"],
-                        message["time"],
-                        received=False,
-                    )
-                self.send_message(self.sock, message)
+            self.send_message(self.sock, message)
+        elif message.startswith("/"):
+            context = {}
+            message = message[1:]
+            if message in ("get_contacts", "get_users"):
+                context["action"] = message
+            elif message in ("add_contact", "del_contact"):
+                context["action"] = message
+                context["user_id"] = input("Enter username of target: ")
+            if context:
+                self.send_message(self.sock, self.create_message(**context))
+        else:
+            pass
 
     @Log()
     def incomming(self):

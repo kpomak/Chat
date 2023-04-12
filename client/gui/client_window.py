@@ -38,7 +38,7 @@ class Ui_MainWindow(QtWidgets.QDialog):
 
     def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
-        self.setWindowTitle(_translate("MainWindow", "Pip Boy"))
+        self.setWindowTitle(_translate("MainWindow", "devChat"))
         self.pushButton.setText(_translate("MainWindow", "Send"))
         self.label.setText(_translate("MainWindow", "Contacts"))
         self.label_2.setText(_translate("MainWindow", "Messages"))

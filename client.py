@@ -8,14 +8,17 @@ from client.core import Client
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
+
     client = Client()
     client.run()
     client.set_username(app)
+
     db = ClientDBase(client.username)
     client.connect_db(db)
+
     ui = MainClientGui(db, client)
     ui.start_messaging()
-    ui.show()
+
     sys.exit(app.exec())
 
 
