@@ -11,21 +11,26 @@ class Receiver(QObject):
         super().__init__()
         self.client = client
 
+    @pyqtSlot()
     def receive(self):
         while message := self.client.receive_message():
             self.got_message.emit()
 
 
 class Transmitter(QObject):
+    sent_message = pyqtSignal()
+
     def __init__(self, client, queue):
         super().__init__()
         self.client = client
         self.queue = queue
 
+    @pyqtSlot()
     def transmit(self):
         while message := self.queue.get():
             self.client.outgoing(message)
             self.queue.task_done()
+            self.sent_message.emit()
 
 
 class MainClientGui(Ui_MainWindow):
@@ -42,7 +47,7 @@ class MainClientGui(Ui_MainWindow):
         self.update_users()
 
     @pyqtSlot()
-    def incomming_message(self):
+    def refresh_data(self):
         self.update_users()
         self.update_messages()
 
@@ -62,6 +67,7 @@ class MainClientGui(Ui_MainWindow):
         self.label_2.setText(f"{self.chat}")
         self.update_messages()
 
+    @pyqtSlot()
     def update_messages(self):
         contact = self.label_2.text()
         messages = self.db.get_messages(contact)
@@ -77,16 +83,18 @@ class MainClientGui(Ui_MainWindow):
                     else Qt.AlignmentFlag.AlignRight
                 )
                 self.messages.appendRow(row)
+        self.listView_2.scrollToBottom()
 
     def start_messaging(self):
         self.receiver = Receiver(self.client)
-        self.receiver.got_message.connect(self.incomming_message)
+        self.receiver.got_message.connect(self.refresh_data)
         self.recv_thread = QThread()
         self.receiver.moveToThread(self.recv_thread)
         self.recv_thread.started.connect(self.receiver.receive)
         self.recv_thread.start()
 
         self.transmitter = Transmitter(self.client, self.queue)
+        self.transmitter.sent_message.connect(self.update_messages)
         self.trans_tread = QThread()
         self.transmitter.moveToThread(self.trans_tread)
         self.trans_tread.started.connect(self.transmitter.transmit)
@@ -106,4 +114,3 @@ class MainClientGui(Ui_MainWindow):
                 "body": message,
             }
         )
-        self.update_messages()
