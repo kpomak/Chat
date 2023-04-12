@@ -1,52 +1,55 @@
-import sys
-from PyQt6 import QtCore, QtGui, QtWidgets
+from queue import Queue
+from PyQt6.QtCore import QThread, QObject, pyqtSignal, Qt
+from PyQt6.QtGui import QStandardItem, QStandardItemModel, QFont
+from client.gui.client_window import Ui_MainWindow
 
 
-class Ui_MainWindow(QtWidgets.QDialog):
+class Worker(QObject):
+    got_message = pyqtSignal(dict)
+
     def __init__(self):
         super().__init__()
-
-    def setupUi(self):
-        self.setObjectName("MainWindow")
-        self.resize(640, 480)
-        self.centralwidget = QtWidgets.QWidget(parent=self)
-        self.centralwidget.setObjectName("centralwidget")
-        self.listView = QtWidgets.QListView(parent=self.centralwidget)
-        self.listView.setGeometry(QtCore.QRect(10, 30, 190, 410))
-        self.listView.setObjectName("listView")
-        self.messages = QtGui.QStandardItemModel()
-        self.listView_2 = QtWidgets.QListView(parent=self.centralwidget)
-        self.listView_2.setGeometry(QtCore.QRect(210, 30, 420, 330))
-        self.listView_2.setObjectName("listView_2")
-        self.listView_2.setModel(self.messages)
-        self.textEdit = QtWidgets.QTextEdit(parent=self.centralwidget)
-        self.textEdit.setGeometry(QtCore.QRect(210, 370, 360, 70))
-        self.textEdit.setObjectName("textEdit")
-        self.pushButton = QtWidgets.QPushButton(parent=self.centralwidget)
-        self.pushButton.setGeometry(QtCore.QRect(580, 370, 50, 70))
-        self.pushButton.setObjectName("pushButton")
-        self.label = QtWidgets.QLabel(parent=self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(10, 6, 190, 20))
-        self.label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.label.setObjectName("label")
-        self.label_2 = QtWidgets.QLabel(parent=self.centralwidget)
-        self.label_2.setGeometry(QtCore.QRect(210, 0, 420, 30))
-        self.label_2.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.label_2.setObjectName("label_2")
-
-        self.retranslateUi()
-
-    def retranslateUi(self):
-        _translate = QtCore.QCoreApplication.translate
-        self.setWindowTitle(_translate("MainWindow", "Pip Boy"))
-        self.pushButton.setText(_translate("MainWindow", "Send"))
-        self.label.setText(_translate("MainWindow", "Contacts"))
-        self.label_2.setText(_translate("MainWindow", "Messages"))
+        self.in_queue = Queue()
+        self.out_quene = Queue()
 
 
-if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    ui = Ui_MainWindow()
-    ui.setupUi()
-    ui.show()
-    sys.exit(app.exec())
+class MainClientGui(Ui_MainWindow):
+    def __init__(self, db, client):
+        super().__init__()
+        self.db = db
+        self.client = client
+        self.setupUi()
+        self.listView.doubleClicked.connect(self.select_chat)
+        self.update_users()
+
+    def update_users(self):
+        users = self.db.get_users()
+        self.users_model = QStandardItemModel()
+        for user in users:
+            active = "🍉" if user.is_active else "💀"
+            contact = "👤" if user.is_contact else " "
+            username = QStandardItem(f"{active} {user.username} {contact}")
+            username.setEditable(False)
+            self.users_model.appendRow(username)
+        self.listView.setModel(self.users_model)
+
+    def select_chat(self):
+        self.chat = self.listView.currentIndex().data()[2:-2]
+        self.label_2.setText(f"{self.chat}")
+        self.update_messages()
+
+    def update_messages(self):
+        contact = self.label_2.text()
+        messages = self.db.get_messages(contact)
+        self.messages.clear()
+        for message in messages:
+            text = QStandardItem(f"{message.message}")
+            date = QStandardItem(f"{message.date.replace(microsecond=0)}")
+            date.setFont(QFont("Helvetica", 6))
+            for row in (text, date):
+                row.setTextAlignment(
+                    Qt.AlignmentFlag.AlignLeft
+                    if message.recieved == True
+                    else Qt.AlignmentFlag.AlignRight
+                )
+                self.messages.appendRow(row)
