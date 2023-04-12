@@ -91,8 +91,8 @@ class ClientDBase:
         ]
 
     @db_session
-    def get_messages(self):
-        return self.Messages.select(lambda message: message.deleted == False)[:]
+    def get_messages(self, username):
+        return self.Messages.select(lambda message: message.contact == username)[:]
 
 
 if __name__ == "__main__":
