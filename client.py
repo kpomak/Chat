@@ -9,6 +9,7 @@ from config.settigs import DEFAULT_PORT, TIMEOUT
 from config.utils import Chat, BaseVerifier
 from client.client_utils import MessageHandlerMixin
 from client.models import ClientDBase
+from client.gui.client import MainClientGui
 from log.settings.client_log_config import logger
 from log.settings.decor_log_config import Log
 
@@ -159,7 +160,10 @@ def main():
     client.set_username(app)
     db = ClientDBase(client.username)
     client.connect_db(db)
-    client.main_loop()
+    # client.main_loop()
+    ui = MainClientGui(db, client)
+    ui.show()
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":
