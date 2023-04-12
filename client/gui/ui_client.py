@@ -55,6 +55,8 @@ class MainClientGui(Ui_MainWindow):
         users = self.db.get_users()
         self.users_model = QStandardItemModel()
         for user in users:
+            if user.username == self.client.username:
+                continue
             active = "🍉" if user.is_active else "💀"
             contact = "👤" if user.is_contact else " "
             username = QStandardItem(f"{active} {user.username} {contact}")

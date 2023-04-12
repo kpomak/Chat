@@ -94,7 +94,7 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
 
     def connect_db(self, db):
         self.db = db
-        self.send_message(self.sock, self.create_message(action="get_users"))
+        # self.send_message(self.sock, self.create_message(action="get_users"))
 
     @Log()
     def outgoing(self, message):

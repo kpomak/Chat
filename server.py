@@ -2,6 +2,8 @@ import select
 import threading
 import os
 import sys
+from queue import Queue
+from http import HTTPStatus
 from collections import deque
 from socket import AF_INET, SOCK_STREAM, socket
 from PyQt6 import QtWidgets
@@ -29,6 +31,7 @@ class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
 
     def __init__(self, db):
         self.users = Users()
+        self.queue = Queue()
         self.messages = deque()
         self.dispatcher = select.poll()
         self.db = db
@@ -73,6 +76,7 @@ class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
                     message = self.get_message(self.users.sockets[client])
                 except Exception:
                     self.disconnect_client(client)
+                    self.queue.put("disconnect")
                 else:
                     message["client"] = client
                     logger.info(f"message {message} recieved from client {client}")
@@ -85,6 +89,18 @@ class Server(Chat, ExchangeMessageMixin, metaclass=ServerVerifier):
             if "action" in message:
                 client, response = self.exchange_service(message, events)
                 self.send_message(self.users.sockets[client], response)
+
+    def status_notify(self):
+        while status := self.queue.get():
+            for socket in self.users.sockets.values():
+                users = self.db.get_all_clients(
+                    self.users.get_username(socket.fileno())
+                )
+                response = self.template_message(
+                    action="get_users", response=HTTPStatus.ACCEPTED, alert=users
+                )
+                self.send_message(socket, response)
+            self.queue.task_done()
 
     @Log()
     def run(self):
@@ -127,6 +143,10 @@ def main():
     server = threading.Thread(target=runner.run)
     server.daemon = True
     server.start()
+
+    notificator = threading.Thread(target=runner.status_notify)
+    notificator.daemon = True
+    notificator.start()
 
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
