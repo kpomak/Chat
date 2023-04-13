@@ -1,5 +1,3 @@
-from http import HTTPStatus
-
 from log import LoggerProxy
 
 proxy = LoggerProxy("client")
@@ -14,7 +12,9 @@ class MessageHandlerMixin:
             return message["username_status"]
 
         if message["action"] == "get_users":
-            users_list = "\n".join(str(item) for item in message["alert"].items())
+            users_list = "\n".join(str(item) for item in message["alert"])
+            with self.lock:
+                self.db.set_users(message["alert"])
             return f"Active users:\n{users_list}"
 
         if message["action"] == "message" and message["user_id"] == self.username:
