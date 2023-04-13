@@ -12,7 +12,7 @@ class UiDialog(QtWidgets.QDialog):
         self.pushButton = QtWidgets.QPushButton(self)
         self.pushButton.setGeometry(QtCore.QRect(110, 80, 89, 25))
         self.pushButton.setObjectName("pushButton")
-        self.pushButton.pressed.connect(QtWidgets.QApplication.quit)
+        self.pushButton.pressed.connect(self.submit_username)
         self.lineEdit = QtWidgets.QLineEdit(self)
         self.lineEdit.setGeometry(QtCore.QRect(20, 40, 261, 25))
         self.lineEdit.setObjectName("lineEdit")
@@ -50,6 +50,13 @@ class UiDialog(QtWidgets.QDialog):
         self.textBrowser.clear()
         self.textBrowser.insertPlainText(message)
         self.show()
+
+    def submit_username(self):
+        if self.lineEdit.text():
+            QtWidgets.QApplication.quit()
+        else:
+            self.textBrowser.clear()
+            self.textBrowser.insertPlainText("Usename shouldn't be empty")
 
 
 if __name__ == "__main__":
