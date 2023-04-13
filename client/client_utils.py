@@ -1,5 +1,3 @@
-from http import HTTPStatus
-
 from log import LoggerProxy
 
 proxy = LoggerProxy("client")

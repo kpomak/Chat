@@ -1,6 +1,8 @@
 from queue import Queue
-from PyQt6.QtCore import QThread, QObject, pyqtSignal, Qt, pyqtSlot
-from PyQt6.QtGui import QStandardItem, QStandardItemModel, QFont
+from PyQt6.QtCore import QThread, QObject, pyqtSignal, Qt, pyqtSlot, QEvent
+from PyQt6.QtWidgets import QMenu, QListView, QTableWidgetItem
+
+from PyQt6.QtGui import QStandardItem, QStandardItemModel, QFont, QAction
 from client.gui.client_window import Ui_MainWindow
 
 
@@ -44,7 +46,32 @@ class MainClientGui(Ui_MainWindow):
         self.listView.doubleClicked.connect(self.select_chat)
         self.pushButton.pressed.connect(self.send_to_user)
         self.pushButton.pressed.connect(self.textEdit.clear)
+        self.listView.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.listView.addAction("Add to contacts", self.add_contact)
+        self.listView.addAction("Delete from contacts", self.del_contact)
         self.update_users()
+
+    @pyqtSlot()
+    def add_contact(self):
+        if "👤" in self.listView.currentIndex().data():
+            return
+        self.queue.put(
+            {
+                "action": "add_contact",
+                "user_id": self.listView.currentIndex().data()[2:-2],
+            }
+        )
+
+    @pyqtSlot()
+    def del_contact(self):
+        if "👤" not in self.listView.currentIndex().data():
+            return
+        self.queue.put(
+            {
+                "action": "del_contact",
+                "user_id": self.listView.currentIndex().data()[2:-2],
+            }
+        )
 
     @pyqtSlot()
     def refresh_data(self):
@@ -71,6 +98,7 @@ class MainClientGui(Ui_MainWindow):
 
     @pyqtSlot()
     def update_messages(self):
+        self.db.update_messages()
         contact = self.label_2.text()
         messages = self.db.get_messages(contact)
         self.messages.clear()

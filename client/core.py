@@ -99,18 +99,15 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
     @Log()
     def outgoing(self, message):
         if isinstance(message, dict):
-            message = self.create_message(
-                action="message",
-                body=message["body"],
-                user_id=message["user_id"],
-            )
-            with self.lock:
-                self.db.add_message(
-                    message["user_id"],
-                    message["body"],
-                    message["time"],
-                    recieved=False,
-                )
+            message = self.create_message(**message)
+            if message.get("body"):
+                with self.lock:
+                    self.db.add_message(
+                        message["user_id"],
+                        message["body"],
+                        message["time"],
+                        recieved=False,
+                    )
             self.send_message(self.sock, message)
         elif message.startswith("/"):
             context = {}

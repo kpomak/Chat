@@ -70,16 +70,23 @@ class ClientDBase:
                     user.deleted = False
             else:
                 contact = self.Contacts(username=username)
+        self.update_all_users()
+
+    @db_session
+    def update_all_users(self):
+        contacts = {user.username: user.deleted for user in self.Contacts.select()}
+        for user in self.AllUsers.select():
+            try:
+                user.is_contact = not contacts[user.username]
+            except KeyError:
+                pass
 
     @db_session
     def update_messages(self):
-        deleted_users = [
-            user.username
-            for user in self.Contacts.select(lambda contact: contact.deleted == True)
+        users = [
+            user.username for user in self.AllUsers.select() if user.is_contact == True
         ]
-        for message in self.Messages.select(
-            lambda mes: mes.contact in deleted_users and mes.deleted == False
-        ):
+        for message in self.Messages.select(lambda mes: mes.contact not in users):
             message.deleted = True
 
     @db_session
@@ -92,7 +99,9 @@ class ClientDBase:
 
     @db_session
     def get_messages(self, username):
-        return self.Messages.select(lambda message: message.contact == username)[:]
+        return self.Messages.select(
+            lambda message: message.contact == username and message.deleted == False
+        )[:]
 
 
 if __name__ == "__main__":
