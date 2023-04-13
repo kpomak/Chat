@@ -1,8 +1,8 @@
 from queue import Queue
-from PyQt6.QtCore import QThread, QObject, pyqtSignal, Qt, pyqtSlot, QEvent
-from PyQt6.QtWidgets import QMenu, QListView, QTableWidgetItem
+from PyQt6.QtCore import QThread, QObject, pyqtSignal, Qt, pyqtSlot
+from PyQt6.QtWidgets import QApplication
 
-from PyQt6.QtGui import QStandardItem, QStandardItemModel, QFont, QAction
+from PyQt6.QtGui import QStandardItem, QStandardItemModel, QFont
 from client.gui.client_window import Ui_MainWindow
 
 

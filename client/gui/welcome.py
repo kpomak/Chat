@@ -8,21 +8,31 @@ class UiDialog(QtWidgets.QDialog):
 
     def setupUi(self):
         self.setObjectName("Dialog")
-        self.resize(300, 200)
+        self.resize(300, 230)
         self.pushButton = QtWidgets.QPushButton(self)
-        self.pushButton.setGeometry(QtCore.QRect(110, 80, 89, 25))
+        self.pushButton.setGeometry(QtCore.QRect(20, 120, 121, 25))
         self.pushButton.setObjectName("pushButton")
         self.pushButton.pressed.connect(self.submit_username)
         self.lineEdit = QtWidgets.QLineEdit(self)
-        self.lineEdit.setGeometry(QtCore.QRect(20, 40, 261, 25))
+        self.lineEdit.setGeometry(QtCore.QRect(20, 30, 261, 25))
         self.lineEdit.setObjectName("lineEdit")
         self.label = QtWidgets.QLabel(self)
         self.label.setGeometry(QtCore.QRect(20, 10, 260, 20))
         self.label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.label.setObjectName("label")
         self.textBrowser = QtWidgets.QTextBrowser(self)
-        self.textBrowser.setGeometry(QtCore.QRect(20, 120, 260, 61))
+        self.textBrowser.setGeometry(QtCore.QRect(20, 160, 260, 60))
         self.textBrowser.setObjectName("textBrowser")
+        self.pushButton_2 = QtWidgets.QPushButton(self)
+        self.pushButton_2.setGeometry(QtCore.QRect(158, 120, 121, 25))
+        self.pushButton_2.setObjectName("pushButton_2")
+        self.lineEdit_2 = QtWidgets.QLineEdit(self)
+        self.lineEdit_2.setGeometry(QtCore.QRect(20, 80, 261, 25))
+        self.lineEdit_2.setObjectName("lineEdit_2")
+        self.label_2 = QtWidgets.QLabel(self)
+        self.label_2.setGeometry(QtCore.QRect(20, 60, 260, 20))
+        self.label_2.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.label_2.setObjectName("label_2")
 
         self.retranslateUi()
 
@@ -31,40 +41,32 @@ class UiDialog(QtWidgets.QDialog):
         self.setWindowTitle(_translate("Dialog", "Welcome to DevChat"))
         self.pushButton.setText(_translate("Dialog", "Sign in"))
         self.label.setText(_translate("Dialog", "Enter username"))
-        self.textBrowser.setHtml(
-            _translate(
-                "Dialog",
-                '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">\n'
-                '<html><head><meta name="qrichtext" content="1" /><meta charset="utf-8" /><style type="text/css">\n'
-                "p, li { white-space: pre-wrap; }\n"
-                "hr { height: 1px; border-width: 0; }\n"
-                'li.unchecked::marker { content: "\\2610"; }\n'
-                'li.checked::marker { content: "\\2612"; }\n'
-                "</style></head><body style=\" font-family:'Ubuntu'; font-size:11pt; font-weight:400; font-style:normal;\">\n"
-                '<p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><br /></p></body></html>',
-            )
-        )
+        self.pushButton_2.setText(_translate("Dialog", "Register"))
+        self.label_2.setText(_translate("Dialog", "Enter password"))
 
     def input_username(self, message):
         self.lineEdit.clear()
+        self.lineEdit_2.clear()
         self.textBrowser.clear()
         self.textBrowser.insertPlainText(message)
         self.show()
 
     def submit_username(self):
-        if self.lineEdit.text():
+        if self.lineEdit.text() and self.lineEdit_2.text():
             QtWidgets.QApplication.quit()
         else:
             self.textBrowser.clear()
-            self.textBrowser.insertPlainText("Usename shouldn't be empty")
+            self.textBrowser.insertPlainText("Usename and password shouldn't be empty")
 
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     ui = UiDialog()
     ui.setupUi()
-    username = "Some text"
+    username = "admin"
+    password = "admin"
     while username:
-        ui.input_username(username)
+        ui.input_username(f"u:{username}\np:{password}")
         app.exec()
         username = ui.lineEdit.text()
+        password = ui.lineEdit.text()
