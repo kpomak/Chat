@@ -1,7 +1,11 @@
 import select
+import os
+import binascii
+import hmac
 from http import HTTPStatus
 
 from .exceptions import PortError
+from config.settigs import ENCODING
 
 
 class NamedPort:
@@ -74,17 +78,20 @@ class ExchangeMessageMixin:
         elif message["action"] == "login":
             username = message["user_login"]
             if username not in self.users.usernames:
-                fileno = message["client"]
-                socket = self.users.sockets[fileno]
-                ip_address, port = socket.getpeername()
-                self.users.usernames[username] = fileno
-                self.db.activate_client(
-                    message["user_login"],
-                    ip_address=ip_address,
-                    port=port,
-                )
-                result = "accepted"
-                self.queue.put("activated")
+                if self.authorisation(message):
+                    fileno = message["client"]
+                    socket = self.users.sockets[fileno]
+                    ip_address, port = socket.getpeername()
+                    self.users.usernames[username] = fileno
+                    self.db.activate_client(
+                        message["user_login"],
+                        ip_address=ip_address,
+                        port=port,
+                    )
+                    result = "accepted"
+                    self.queue.put("activated")
+                else:
+                    result = "rejected"
             else:
                 result = "rejected"
             response = self.template_message(action="login", username_status=result)
@@ -130,3 +137,26 @@ class ExchangeMessageMixin:
                 error=self.get_error,
             )
         return message["client"], response
+
+    def authorisation(self, message):
+        request = {
+            "action": "auth",
+            "response": HTTPStatus.NETWORK_AUTHENTICATION_REQUIRED,
+        }
+        random_string = binascii.hexlify(os.urandom(64))
+        request["body"] = random_string.decode(ENCODING)
+        hashed_string = hmac.new(
+            self.db.get_password(message["user_login"]).encode(ENCODING),
+            random_string,
+            "sha256",
+        )
+        digest = hashed_string.digest()
+        sock = self.users.sockets[message["client"]]
+        with self.lock:
+            self.send_message(sock, request)
+            response = self.get_message(sock)
+        client_digest = binascii.a2b_base64(response["body"])
+        if hmac.compare_digest(digest, client_digest):
+            return True
+        else:
+            False

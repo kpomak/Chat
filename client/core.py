@@ -1,11 +1,15 @@
 import sys
 import threading
 import time
+import binascii
+import hmac
+import hashlib
+from http import HTTPStatus
 from socket import AF_INET, SOCK_STREAM, socket
 
 from client.client_utils import MessageHandlerMixin
 from client.gui import welcome
-from config.settigs import DEFAULT_PORT, CHECK_TIMEOUT
+from config.settigs import DEFAULT_PORT, CHECK_TIMEOUT, ENCODING
 from config.utils import BaseVerifier, Chat
 from log.settings.client_log_config import logger
 from log.settings.decor_log_config import Log
@@ -86,11 +90,33 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
             dialog.input_username(error)
             app.exec()
             self.username = dialog.lineEdit.text()
+            self.password = dialog.lineEdit_2.text()
+            password = self.password.encode(ENCODING)
+            salt = self.username.encode(ENCODING)
+            password_hash = hashlib.pbkdf2_hmac("sha256", password, salt, 10000)
+            password_hash_string = binascii.hexlify(password_hash)
             message = self.create_message(action="login")
             self.send_message(self.sock, message)
-            if self.receive_message() == "rejected":
+            response = self.receive_message()
+            if response == "rejected":
                 error = f"Sorry, username {self.username} is busy :("
                 self.username = None
+            else:
+                check_hash = hmac.new(
+                    password_hash_string, response.encode(ENCODING), "sha256"
+                )
+                digest = check_hash.digest()
+                digest_message = {
+                    "action": "auth",
+                    "response": HTTPStatus.NETWORK_AUTHENTICATION_REQUIRED,
+                    "body": binascii.b2a_base64(digest).decode(ENCODING),
+                }
+                self.send_message(self.sock, self.create_message(**digest_message))
+                response = self.receive_message()
+                if response == "rejected":
+                    error = f"Check your credentials :("
+                    self.username = None
+        del dialog
 
     def connect_db(self, db):
         self.db = db

@@ -11,6 +11,9 @@ class MessageHandlerMixin:
         if message["action"] == "login":
             return message["username_status"]
 
+        if message["action"] == "auth":
+            return message["body"]
+
         if message["action"] == "get_users":
             users_list = "\n".join(str(item) for item in message["alert"])
             with self.lock:

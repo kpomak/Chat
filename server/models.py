@@ -1,3 +1,5 @@
+import sys
+import os
 from datetime import datetime
 
 from pony.orm import (
@@ -9,6 +11,8 @@ from pony.orm import (
     db_session,
     delete,
 )
+
+sys.path.append(os.getcwd())
 from config.settigs import DEBUG, DEFAULT_PORT, DB_FILE_NAME
 
 
@@ -18,6 +22,7 @@ class Storage:
     class Client(db.Entity):
         _table_ = "client"
         username = Required(str, unique=True)
+        password = Optional(str)
         info = Optional(str)
         is_active = Required(bool, default=True)
 
@@ -43,6 +48,11 @@ class Storage:
         self.db.bind(provider="sqlite", filename=f"../{DB_FILE_NAME}", create_db=True)
         set_sql_debug(DEBUG)
         self.db.generate_mapping(create_tables=True)
+
+    @db_session
+    def get_password(self, username):
+        client = self.Client.select(lambda client: client.username == username).first()
+        return client.password
 
     @db_session
     def activate_client(self, username, *args, info="", **kwargs):
