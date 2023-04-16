@@ -91,31 +91,46 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
             app.exec()
             self.username = dialog.lineEdit.text()
             self.password = dialog.lineEdit_2.text()
-            password = self.password.encode(ENCODING)
-            salt = self.username.encode(ENCODING)
-            password_hash = hashlib.pbkdf2_hmac("sha256", password, salt, 10000)
-            password_hash_string = binascii.hexlify(password_hash)
-            message = self.create_message(action="login")
-            self.send_message(self.sock, message)
-            response = self.receive_message()
-            if response == "rejected":
-                error = f"Sorry, username {self.username} is busy :("
-                self.username = None
-            else:
-                check_hash = hmac.new(
-                    password_hash_string, response.encode(ENCODING), "sha256"
-                )
-                digest = check_hash.digest()
-                digest_message = {
-                    "action": "auth",
-                    "response": HTTPStatus.NETWORK_AUTHENTICATION_REQUIRED,
-                    "body": binascii.b2a_base64(digest).decode(ENCODING),
-                }
-                self.send_message(self.sock, self.create_message(**digest_message))
+            if not dialog.new_user:
+                password = self.password.encode(ENCODING)
+                salt = self.username.encode(ENCODING)
+                password_hash = hashlib.pbkdf2_hmac("sha256", password, salt, 10000)
+                password_hash_string = binascii.hexlify(password_hash)
+                message = self.create_message(action="login")
+                self.send_message(self.sock, message)
                 response = self.receive_message()
                 if response == "rejected":
-                    error = f"Check your credentials :("
+                    error = f"Sorry, username {self.username} is busy :("
                     self.username = None
+                else:
+                    check_hash = hmac.new(
+                        password_hash_string, response.encode(ENCODING), "sha256"
+                    )
+                    digest = check_hash.digest()
+                    digest_message = {
+                        "action": "auth",
+                        "response": HTTPStatus.NETWORK_AUTHENTICATION_REQUIRED,
+                        "body": binascii.b2a_base64(digest).decode(ENCODING),
+                    }
+                    self.send_message(self.sock, self.create_message(**digest_message))
+                    response = self.receive_message()
+                    if response == "rejected":
+                        error = f"Check your credentials :("
+                        self.username = None
+            else:
+                message = {
+                    "action": "register",
+                    "password": self.password,
+                }
+                reg_request = self.create_message(**message)
+                self.send_message(self.sock, reg_request)
+                reg_response = self.receive_message()
+                if reg_response == "accepted":
+                    error = f"User {self.username} created"
+                elif reg_response == "rejected":
+                    error = f"Sorry, username {self.username} is busy :("
+                self.username = None
+
         del dialog
 
     def connect_db(self, db):

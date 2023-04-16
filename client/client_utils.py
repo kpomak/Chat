@@ -11,6 +11,9 @@ class MessageHandlerMixin:
         if message["action"] == "login":
             return message["username_status"]
 
+        if message["action"] == "register":
+            return message["reg_status"]
+
         if message["action"] == "auth":
             return message["body"]
 

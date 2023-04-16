@@ -2,6 +2,7 @@ import select
 import os
 import binascii
 import hmac
+import hashlib
 
 from logging import getLogger
 from http import HTTPStatus
@@ -119,6 +120,23 @@ class ExchangeMessageMixin:
             else:
                 result = "rejected"
             response = self.template_message(action="login", username_status=result)
+
+        # register client
+        elif message["action"] == "register":
+            salt = message["user_login"].encode(ENCODING)
+            password_hash = hashlib.pbkdf2_hmac(
+                "sha256", message["password"].encode(ENCODING), salt, 10000
+            )
+            password_hash_string = binascii.hexlify(password_hash).decode(ENCODING)
+            new_client = self.db.register_client(
+                username=message["user_login"],
+                password=password_hash_string,
+            )
+            if new_client:
+                result = "accepted"
+            else:
+                result = "rejected"
+            response = self.template_message(action="register", reg_status=result)
 
         # get_contacts
         elif message["action"] == "get_contacts":

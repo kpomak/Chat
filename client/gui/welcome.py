@@ -9,10 +9,11 @@ class UiDialog(QtWidgets.QDialog):
     def setupUi(self):
         self.setObjectName("Dialog")
         self.resize(300, 230)
+        self.new_user = False
         self.pushButton = QtWidgets.QPushButton(self)
         self.pushButton.setGeometry(QtCore.QRect(20, 120, 121, 25))
         self.pushButton.setObjectName("pushButton")
-        self.pushButton.pressed.connect(self.submit_username)
+        self.pushButton.pressed.connect(self.sign_in)
         self.lineEdit = QtWidgets.QLineEdit(self)
         self.lineEdit.setGeometry(QtCore.QRect(20, 30, 261, 25))
         self.lineEdit.setObjectName("lineEdit")
@@ -20,15 +21,16 @@ class UiDialog(QtWidgets.QDialog):
         self.label.setGeometry(QtCore.QRect(20, 10, 260, 20))
         self.label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.label.setObjectName("label")
-        self.textBrowser = QtWidgets.QTextBrowser(self)
-        self.textBrowser.setGeometry(QtCore.QRect(20, 160, 260, 60))
-        self.textBrowser.setObjectName("textBrowser")
-        self.pushButton_2 = QtWidgets.QPushButton(self)
-        self.pushButton_2.setGeometry(QtCore.QRect(158, 120, 121, 25))
-        self.pushButton_2.setObjectName("pushButton_2")
         self.lineEdit_2 = QtWidgets.QLineEdit(self)
         self.lineEdit_2.setGeometry(QtCore.QRect(20, 80, 261, 25))
         self.lineEdit_2.setObjectName("lineEdit_2")
+        self.pushButton_2 = QtWidgets.QPushButton(self)
+        self.pushButton_2.setGeometry(QtCore.QRect(158, 120, 121, 25))
+        self.pushButton_2.setObjectName("pushButton_2")
+        self.pushButton_2.pressed.connect(self.register)
+        self.textBrowser = QtWidgets.QTextBrowser(self)
+        self.textBrowser.setGeometry(QtCore.QRect(20, 160, 260, 60))
+        self.textBrowser.setObjectName("textBrowser")
         self.label_2 = QtWidgets.QLabel(self)
         self.label_2.setGeometry(QtCore.QRect(20, 60, 260, 20))
         self.label_2.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
@@ -51,12 +53,17 @@ class UiDialog(QtWidgets.QDialog):
         self.textBrowser.insertPlainText(message)
         self.show()
 
-    def submit_username(self):
+    def sign_in(self):
+        self.new_user = False
         if self.lineEdit.text() and self.lineEdit_2.text():
             QtWidgets.QApplication.quit()
         else:
             self.textBrowser.clear()
             self.textBrowser.insertPlainText("Usename and password shouldn't be empty")
+
+    def register(self):
+        self.sign_in()
+        self.new_user = True
 
 
 if __name__ == "__main__":

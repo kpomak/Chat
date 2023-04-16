@@ -67,7 +67,13 @@ class Storage:
 
     @db_session
     def register_client(self, **kwargs):
-        client = self.Client(**kwargs)
+        client = self.Client.select(
+            lambda user: user.username == kwargs.get("username")
+        ).first()
+
+        if not client:
+            new_client = self.Client(**kwargs)
+            return new_client
 
     @db_session
     def add_history(self, client, **kwargs):
