@@ -1,4 +1,5 @@
 import sys
+import os
 import threading
 import time
 import binascii
@@ -6,10 +7,12 @@ import hmac
 import hashlib
 from http import HTTPStatus
 from socket import AF_INET, SOCK_STREAM, socket
+from Crypto.Cipher import PKCS1_OAEP
+from Crypto.PublicKey import RSA
 
 from client.client_utils import MessageHandlerMixin
 from client.gui import welcome
-from config.settigs import DEFAULT_PORT, CHECK_TIMEOUT, ENCODING
+from config.settigs import DEFAULT_PORT, CHECK_TIMEOUT, ENCODING, ITERATIONS
 from config.utils import BaseVerifier, Chat
 from log.settings.client_log_config import logger
 from log.settings.decor_log_config import Log
@@ -32,6 +35,24 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
     def __init__(self):
         self.lock = threading.Lock()
         self.username = None
+        self.keys = None
+        self.db = None
+        self.contact_public_key = None
+        self.decrypter = None
+        self.encryptor = None
+
+    @Log()
+    def request_public_key(self, username):
+        # with self.lock:
+        self.send_message(
+            self.sock,
+            self.create_message(
+                action="public_key_request",
+                user_id=username,
+            ),
+        )
+        public_key = self.receive_message()
+        self.contact_public_key = public_key
 
     @Log()
     def create_message(self, **kwargs):
@@ -94,7 +115,9 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
             if not dialog.new_user:
                 password = self.password.encode(ENCODING)
                 salt = self.username.encode(ENCODING)
-                password_hash = hashlib.pbkdf2_hmac("sha256", password, salt, 10000)
+                password_hash = hashlib.pbkdf2_hmac(
+                    "sha256", password, salt, ITERATIONS
+                )
                 password_hash_string = binascii.hexlify(password_hash)
                 message = self.create_message(action="login")
                 self.send_message(self.sock, message)
@@ -135,7 +158,19 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
 
     def connect_db(self, db):
         self.db = db
-        # self.send_message(self.sock, self.create_message(action="get_users"))
+
+    def load_keys(self):
+        key = os.path.join(os.getcwd(), f"rsa_key.{self.username}.key")
+        if not os.path.exists(key):
+            keys = RSA.generate(2048, os.urandom)
+            with open(key, "wb") as f:
+                f.write(keys.export_key())
+        else:
+            with open(key, "rb") as f:
+                keys = RSA.import_key(f.read())
+
+        self.keys = keys
+        self.decrypter = PKCS1_OAEP.new(keys)
 
     @Log()
     def outgoing(self, message):

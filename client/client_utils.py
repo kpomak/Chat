@@ -1,4 +1,5 @@
 from log import LoggerProxy
+from config.settigs import ENCODING
 
 proxy = LoggerProxy("client")
 logger = proxy.get_logger()
@@ -16,6 +17,20 @@ class MessageHandlerMixin:
 
         if message["action"] == "auth":
             return message["body"]
+
+        if message["action"] == "public_key" and message["user_id"] == self.username:
+            return message["key"]
+
+        if message["action"] == "public_key_request":
+            destination = message["user_login"]
+            self.send_message(
+                self.sock,
+                self.create_message(
+                    action="public_key",
+                    key=self.keys.public_key().export_key().decode(ENCODING),
+                    user_id=destination,
+                ),
+            )
 
         if message["action"] == "get_users":
             users_list = "\n".join(str(item) for item in message["alert"])

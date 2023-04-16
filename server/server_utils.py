@@ -8,7 +8,7 @@ from logging import getLogger
 from http import HTTPStatus
 
 from .exceptions import PortError
-from config.settigs import ENCODING
+from config.settigs import ENCODING, ITERATIONS
 
 
 logger = getLogger("server")
@@ -85,7 +85,10 @@ class ExchangeMessageMixin:
     @login_required
     def exchange_service(self, message, events):
         # p2p delivery
-        if message["action"] == "message" and "user_id" in message:
+        if (
+            message["action"] in ("message", "public_key_request", "public_key")
+            and "user_id" in message
+        ):
             for client, event in events:
                 if (
                     message["user_id"] == self.users.get_username(client)
@@ -125,7 +128,7 @@ class ExchangeMessageMixin:
         elif message["action"] == "register":
             salt = message["user_login"].encode(ENCODING)
             password_hash = hashlib.pbkdf2_hmac(
-                "sha256", message["password"].encode(ENCODING), salt, 10000
+                "sha256", message["password"].encode(ENCODING), salt, ITERATIONS
             )
             password_hash_string = binascii.hexlify(password_hash).decode(ENCODING)
             new_client = self.db.register_client(

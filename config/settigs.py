@@ -16,6 +16,8 @@ DEBUG = False
 TIMEOUT = 0.5
 CHECK_TIMEOUT = 5
 
+ITERATIONS = 10000
+
 ERRORS = [
     "Your lack of attention to detail is so abysmal, you make a sloth look like a speed demon.",
     "Your incompetence knows no bounds. I'm surprised you can even breathe without help.",

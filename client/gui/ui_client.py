@@ -93,6 +93,7 @@ class MainClientGui(Ui_MainWindow):
 
     def select_chat(self):
         self.chat = self.listView.currentIndex().data()[2:-2]
+        self.client.request_public_key(self.chat)
         self.label_2.setText(f"{self.chat}")
         self.update_messages()
 
