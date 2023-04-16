@@ -51,18 +51,23 @@ class Storage:
 
     @db_session
     def get_password(self, username):
-        client = self.Client.select(lambda client: client.username == username).first()
+        client = self.Client.select(lambda client: client.username == username).get()
+        if not client:
+            return ""
         return client.password
 
     @db_session
     def activate_client(self, username, *args, info="", **kwargs):
         client = self.Client.select(lambda client: client.username == username).get()
         if not client:
-            client = self.Client(username=username, info=info)
-            client.flush()
+            return
         elif not client.is_active:
             client.is_active = True
         self.add_history(client, **kwargs)
+
+    @db_session
+    def register_client(self, **kwargs):
+        client = self.Client(**kwargs)
 
     @db_session
     def add_history(self, client, **kwargs):
@@ -149,8 +154,8 @@ class Storage:
 
 if __name__ == "__main__":
     server_db = Storage()
-    server_db.activate_client("Alina")
-    server_db.activate_client("Oleg")
+    server_db.register_client(username="Alina")
+    server_db.register_client(username="Oleg")
     server_db.add_contact("Alina", "Oleg")
     print(
         "Alina has these contacts in her contacts list: ",
