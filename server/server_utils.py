@@ -2,10 +2,15 @@ import select
 import os
 import binascii
 import hmac
+
+from logging import getLogger
 from http import HTTPStatus
 
 from .exceptions import PortError
 from config.settigs import ENCODING
+
+
+logger = getLogger("server")
 
 
 class NamedPort:
@@ -57,7 +62,26 @@ class Users:
         del self.sockets_dict[fileno]
 
 
+def login_required(func):
+    def wrapper(*args, **kwargs):
+        instance = args[0]
+        message = args[1]
+
+        if message["user_login"] in instance.users.usernames or message["action"] in (
+            "login",
+            "auth",
+            "register",
+        ):
+            return func(*args, **kwargs)
+        else:
+            logger.warning(f"Not enough permissions for handle messafe {message}")
+            return
+
+    return wrapper
+
+
 class ExchangeMessageMixin:
+    @login_required
     def exchange_service(self, message, events):
         # p2p delivery
         if message["action"] == "message" and "user_id" in message:
@@ -78,7 +102,7 @@ class ExchangeMessageMixin:
         elif message["action"] == "login":
             username = message["user_login"]
             if username not in self.users.usernames:
-                if self.authorisation(message):
+                if self.authentication(message):
                     fileno = message["client"]
                     socket = self.users.sockets[fileno]
                     ip_address, port = socket.getpeername()
@@ -138,7 +162,7 @@ class ExchangeMessageMixin:
             )
         return message["client"], response
 
-    def authorisation(self, message):
+    def authentication(self, message):
         request = {
             "action": "auth",
             "response": HTTPStatus.NETWORK_AUTHENTICATION_REQUIRED,
