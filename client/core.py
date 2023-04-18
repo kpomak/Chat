@@ -43,7 +43,6 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
 
     @Log()
     def request_public_key(self, username):
-        # with self.lock:
         self.send_message(
             self.sock,
             self.create_message(
@@ -201,7 +200,7 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
     @Log()
     def incomming(self):
         while message := self.receive_message():
-            print(message)
+            pass
 
     @Log()
     def main_loop(self):

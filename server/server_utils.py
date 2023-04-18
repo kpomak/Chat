@@ -197,9 +197,8 @@ class ExchangeMessageMixin:
         )
         digest = hashed_string.digest()
         sock = self.users.sockets[message["client"]]
-        with self.lock:
-            self.send_message(sock, request)
-            response = self.get_message(sock)
+        self.send_message(sock, request)
+        response = self.get_message(sock)
         client_digest = binascii.a2b_base64(response["body"])
         if hmac.compare_digest(digest, client_digest):
             return True

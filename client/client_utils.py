@@ -31,6 +31,7 @@ class MessageHandlerMixin:
                     user_id=destination,
                 ),
             )
+            return destination
 
         if message["action"] == "get_users":
             users_list = "\n".join(str(item) for item in message["alert"])
