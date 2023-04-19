@@ -38,8 +38,7 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
         self.username = None
         self.keys = None
         self.db = None
-        # self.contact_public_key = None
-        self.public = None
+        self.public_key = None
         self.decryptor = None
         self.encryptor = None
 
@@ -53,7 +52,6 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
             ),
         )
         public_key = self.receive_message()
-        # self.contact_public_key = public_key
         self.encryptor = PKCS1_OAEP.new(RSA.import_key(public_key))
 
     @Log()
@@ -173,38 +171,23 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
 
         self.keys = keys
         self.decryptor = PKCS1_OAEP.new(keys)
-        self.public = keys.public_key().export_key()
+        self.public_key = keys.public_key().export_key()
 
     @Log()
     def outgoing(self, message):
-        if isinstance(message, dict):
-            message = self.create_message(**message)
-            if message.get("body"):
-                with self.lock:
-                    self.db.add_message(
-                        message["user_id"],
-                        message["body"],
-                        message["time"],
-                        recieved=False,
-                    )
-                encrypted_body = self.encryptor.encrypt(
-                    message["body"].encode(ENCODING)
+        message = self.create_message(**message)
+        if message.get("body"):
+            with self.lock:
+                self.db.add_message(
+                    message["user_id"],
+                    message["body"],
+                    message["time"],
+                    recieved=False,
                 )
-                message["body"] = base64.b64encode(encrypted_body).decode(ENCODING)
-            self.send_message(self.sock, message)
-            logger.debug(f"Sent message {message}")
-        elif message.startswith("/"):
-            context = {}
-            message = message[1:]
-            if message in ("get_contacts", "get_users"):
-                context["action"] = message
-            elif message in ("add_contact", "del_contact"):
-                context["action"] = message
-                context["user_id"] = input("Enter username of target: ")
-            if context:
-                self.send_message(self.sock, self.create_message(**context))
-        else:
-            pass
+            encrypted_body = self.encryptor.encrypt(message["body"].encode(ENCODING))
+            message["body"] = base64.b64encode(encrypted_body).decode(ENCODING)
+        self.send_message(self.sock, message)
+        logger.debug(f"Sent message {message}")
 
     @Log()
     def incomming(self):
