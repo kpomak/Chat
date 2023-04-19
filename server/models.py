@@ -42,7 +42,7 @@ class Storage:
     class ContactsList(db.Entity):
         _table_ = "contacts list"
         owner_id = Required(lambda: Storage.Client)
-        contact_id = Required(lambda: Storage.Client)
+        contact_id = Optional(lambda: Storage.Client)
 
     def __init__(self):
         self.db.bind(provider="sqlite", filename=f"../{DB_FILE_NAME}", create_db=True)

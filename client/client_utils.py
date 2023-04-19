@@ -27,7 +27,7 @@ class MessageHandlerMixin:
                 self.sock,
                 self.create_message(
                     action="public_key",
-                    key=self.keys.public_key().export_key().decode(ENCODING),
+                    key=self.public.decode(ENCODING),
                     user_id=destination,
                 ),
             )

@@ -38,6 +38,7 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
         self.keys = None
         self.db = None
         self.contact_public_key = None
+        self.public = None
         self.decrypter = None
         self.encryptor = None
 
@@ -170,6 +171,7 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
 
         self.keys = keys
         self.decrypter = PKCS1_OAEP.new(keys)
+        self.public = keys.public_key().export_key()
 
     @Log()
     def outgoing(self, message):
@@ -184,6 +186,7 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
                         recieved=False,
                     )
             self.send_message(self.sock, message)
+            logger.debug(f"Sent message {message}")
         elif message.startswith("/"):
             context = {}
             message = message[1:]
@@ -199,8 +202,13 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
 
     @Log()
     def incomming(self):
-        while message := self.receive_message():
-            pass
+        while True:
+            try:
+                message = self.receive_message()
+                logger.debug(f"Received message {message}")
+            except Exception as e:
+                logger.error(f"Exception {e} while recieving message {message}")
+                pass
 
     @Log()
     def main_loop(self):
