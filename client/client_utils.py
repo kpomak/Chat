@@ -1,3 +1,4 @@
+import base64
 from log import LoggerProxy
 from config.settigs import ENCODING
 
@@ -40,6 +41,10 @@ class MessageHandlerMixin:
             return f"Active users:\n{users_list}"
 
         if message["action"] == "message" and message["user_id"] == self.username:
+            encoded_body = message["body"].encode(ENCODING)
+            encrypted_body = base64.b64decode(encoded_body)
+            message["body"] = self.decryptor.decrypt(encrypted_body).decode(ENCODING)
+
             with self.lock:
                 self.db.add_message(
                     message["user_login"], message["body"], message["time"]

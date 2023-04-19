@@ -38,9 +38,9 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
         self.username = None
         self.keys = None
         self.db = None
-        self.contact_public_key = None
+        # self.contact_public_key = None
         self.public = None
-        self.decrypter = None
+        self.decryptor = None
         self.encryptor = None
 
     @Log()
@@ -172,7 +172,7 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
                 keys = RSA.import_key(f.read())
 
         self.keys = keys
-        self.decrypter = PKCS1_OAEP.new(keys)
+        self.decryptor = PKCS1_OAEP.new(keys)
         self.public = keys.public_key().export_key()
 
     @Log()
