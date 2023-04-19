@@ -1,6 +1,5 @@
 from queue import Queue
 from PyQt6.QtCore import QThread, QObject, pyqtSignal, Qt, pyqtSlot
-from PyQt6.QtWidgets import QApplication
 
 from PyQt6.QtGui import QStandardItem, QStandardItemModel, QFont
 from client.gui.client_window import Ui_MainWindow
@@ -15,8 +14,13 @@ class Receiver(QObject):
 
     @pyqtSlot()
     def receive(self):
-        while message := self.client.receive_message():
-            self.got_message.emit()
+        while True:
+            try:
+                self.client.receive_message()
+            except Exception:
+                pass
+            else:
+                self.got_message.emit()
 
 
 class Transmitter(QObject):
