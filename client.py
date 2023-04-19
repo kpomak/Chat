@@ -1,9 +1,9 @@
 import sys
 from PyQt6 import QtWidgets
 
-from client.models import ClientDBase
-from client.gui.ui_client import MainClientGui
-from client.core import Client
+from client_app.models import ClientDBase
+from client_app.gui.ui_client import MainClientGui
+from client_app.core import Client
 
 
 def main():

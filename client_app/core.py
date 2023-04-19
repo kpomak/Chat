@@ -1,7 +1,6 @@
 import sys
 import os
 import threading
-import time
 import binascii
 import base64
 import hmac
@@ -11,9 +10,9 @@ from socket import AF_INET, SOCK_STREAM, socket
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
 
-from client.client_utils import MessageHandlerMixin
-from client.gui import welcome
-from config.settigs import DEFAULT_PORT, CHECK_TIMEOUT, ENCODING, ITERATIONS
+from client_app.client_utils import MessageHandlerMixin
+from client_app.gui import welcome
+from config.settigs import DEFAULT_PORT, ENCODING, ITERATIONS
 from config.utils import BaseVerifier, Chat
 from log.settings.client_log_config import logger
 from log.settings.decor_log_config import Log
@@ -35,6 +34,7 @@ class ClientVerifier(BaseVerifier):
 class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
     def __init__(self):
         self.lock = threading.Lock()
+        self.sock_lock = threading.Lock()
         self.username = None
         self.keys = None
         self.db = None
@@ -44,14 +44,15 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
 
     @Log()
     def request_public_key(self, username):
-        self.send_message(
-            self.sock,
-            self.create_message(
-                action="public_key_request",
-                user_id=username,
-            ),
-        )
-        public_key = self.receive_message()
+        with self.sock_lock:
+            self.send_message(
+                self.sock,
+                self.create_message(
+                    action="public_key_request",
+                    user_id=username,
+                ),
+            )
+            public_key = self.receive_message()
         self.encryptor = PKCS1_OAEP.new(RSA.import_key(public_key))
 
     @Log()
@@ -109,8 +110,9 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
         password_hash = hashlib.pbkdf2_hmac("sha256", password, salt, ITERATIONS)
         password_hash_string = binascii.hexlify(password_hash)
         message = self.create_message(action="login")
-        self.send_message(self.sock, message)
-        response = self.receive_message()
+        with self.sock_lock:
+            self.send_message(self.sock, message)
+            response = self.receive_message()
         if response == "rejected":
             ui.error = f"Sorry, username {self.username} is busy :("
             self.username = None
@@ -124,8 +126,9 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
                 "response": HTTPStatus.NETWORK_AUTHENTICATION_REQUIRED,
                 "body": binascii.b2a_base64(digest).decode(ENCODING),
             }
-            self.send_message(self.sock, self.create_message(**digest_message))
-            response = self.receive_message()
+            with self.sock_lock:
+                self.send_message(self.sock, self.create_message(**digest_message))
+                response = self.receive_message()
             if response == "rejected":
                 ui.error = f"Check your credentials :("
                 self.username = None
@@ -137,8 +140,9 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
             "password": self.password,
         }
         reg_request = self.create_message(**message)
-        self.send_message(self.sock, reg_request)
-        reg_response = self.receive_message()
+        with self.sock_lock:
+            self.send_message(self.sock, reg_request)
+            reg_response = self.receive_message()
         if reg_response == "accepted":
             ui.error = f"User {self.username} created"
         elif reg_response == "rejected":
@@ -157,47 +161,8 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
             self.password = dialog.lineEdit_2.text()
             if not dialog.new_user:
                 self.authorisation(dialog)
-                # password = self.password.encode(ENCODING)
-                # salt = self.username.encode(ENCODING)
-                # password_hash = hashlib.pbkdf2_hmac(
-                #     "sha256", password, salt, ITERATIONS
-                # )
-                # password_hash_string = binascii.hexlify(password_hash)
-                # message = self.create_message(action="login")
-                # self.send_message(self.sock, message)
-                # response = self.receive_message()
-                # if response == "rejected":
-                #     error = f"Sorry, username {self.username} is busy :("
-                #     self.username = None
-                # else:
-                #     check_hash = hmac.new(
-                #         password_hash_string, response.encode(ENCODING), "sha256"
-                #     )
-                #     digest = check_hash.digest()
-                #     digest_message = {
-                #         "action": "auth",
-                #         "response": HTTPStatus.NETWORK_AUTHENTICATION_REQUIRED,
-                #         "body": binascii.b2a_base64(digest).decode(ENCODING),
-                #     }
-                #     self.send_message(self.sock, self.create_message(**digest_message))
-                #     response = self.receive_message()
-                #     if response == "rejected":
-                #         error = f"Check your credentials :("
-                #         self.username = None
             else:
                 self.registration(dialog)
-                # message = {
-                #     "action": "register",
-                #     "password": self.password,
-                # }
-                # reg_request = self.create_message(**message)
-                # self.send_message(self.sock, reg_request)
-                # reg_response = self.receive_message()
-                # if reg_response == "accepted":
-                #     error = f"User {self.username} created"
-                # elif reg_response == "rejected":
-                #     error = f"Sorry, username {self.username} is busy :("
-                # self.username = None
 
         del dialog
 
@@ -243,19 +208,3 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
             except Exception as e:
                 logger.error(f"Exception {e} while recieving message {message}")
                 pass
-
-    @Log()
-    def main_loop(self):
-        transmitter = threading.Thread(target=self.outgoing)
-        transmitter.daemon = True
-        transmitter.start()
-
-        receiver = threading.Thread(target=self.incomming)
-        receiver.daemon = True
-        receiver.start()
-
-        while True:
-            time.sleep(CHECK_TIMEOUT)
-            if transmitter.is_alive() and receiver.is_alive():
-                continue
-            break

@@ -10,9 +10,10 @@ readme = "README.md"
 python = "^3.9"
 psutil = "5.9.4"
 pony = "0.7.16"
-pyqt6 = "^6.4.2"
-pyqt6-tools = "^6.4.2.3.3"
-pycryptodome = "^3.17"
+pyqt6 = "6.4.2"
+pyqt6-tools = "6.4.2.3.3"
+pycryptodome = "3.17"
+
 
 
 [tool.poetry.group.dev.dependencies]

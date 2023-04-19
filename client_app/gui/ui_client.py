@@ -2,7 +2,7 @@ from queue import Queue
 from PyQt6.QtCore import QThread, QObject, pyqtSignal, Qt, pyqtSlot
 
 from PyQt6.QtGui import QStandardItem, QStandardItemModel, QFont
-from client.gui.client_window import Ui_MainWindow
+from client_app.gui.client_window import Ui_MainWindow
 
 
 class Receiver(QObject):
