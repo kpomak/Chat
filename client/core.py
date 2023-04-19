@@ -3,6 +3,7 @@ import os
 import threading
 import time
 import binascii
+import base64
 import hmac
 import hashlib
 from http import HTTPStatus
@@ -52,7 +53,8 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
             ),
         )
         public_key = self.receive_message()
-        self.contact_public_key = public_key
+        # self.contact_public_key = public_key
+        self.encryptor = PKCS1_OAEP.new(RSA.import_key(public_key))
 
     @Log()
     def create_message(self, **kwargs):
@@ -185,6 +187,10 @@ class Client(Chat, MessageHandlerMixin, metaclass=ClientVerifier):
                         message["time"],
                         recieved=False,
                     )
+                encrypted_body = self.encryptor.encrypt(
+                    message["body"].encode(ENCODING)
+                )
+                message["body"] = base64.b64encode(encrypted_body).decode(ENCODING)
             self.send_message(self.sock, message)
             logger.debug(f"Sent message {message}")
         elif message.startswith("/"):

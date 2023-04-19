@@ -19,7 +19,7 @@ class MessageHandlerMixin:
             return message["body"]
 
         if message["action"] == "public_key" and message["user_id"] == self.username:
-            return message["key"]
+            return message["key"].encode(ENCODING)
 
         if message["action"] == "public_key_request":
             destination = message["user_login"]
