@@ -15,9 +15,7 @@ author = "kpomak"
 release = "0.1.0"
 
 
-# sys.path.insert(0, os.path.abspath("."))
-
-path = os.path.dirname(os.path.abspath("../../client.py"))
+path = os.path.dirname(os.path.abspath("../client.py"))
 sys.path.insert(0, path)
 
 # -- General configuration ---------------------------------------------------
