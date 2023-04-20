@@ -19,9 +19,9 @@ class BaseVerifier(type):
     def __init__(cls, name, bases, namespaces):
         """
         Магический метод возвращающий объект класса BaseVerifier
-        :name:
-        :bases:
-        :namespase:
+        :name: (str) имя класса подлежащего валидации
+        :bases: (list) список классов родителей
+        :namespase: (dict) словарь атрибутов создаваемого класса
         """
         super().__init__(name, bases, namespaces)
 
@@ -54,18 +54,37 @@ class BaseVerifier(type):
 
 
 class Chat:
+    """
+    Класс родитель для клиентского и серверного приложений.
+    Содержит общие методы приема, отправки и формирования сообщения.
+    """
+
     @staticmethod
     def get_message(sock):
+        """
+        Метод принимающий сообщение response в передаваемый объект сокета.
+        :sock: (socket.socket) объект сокета для приема сообщения.
+        :return: (dict) принятое сообщение.
+        """
         response = sock.recv(MAX_PACKAGE_LENGTH).decode(ENCODING)
         return json.loads(response)
 
     @staticmethod
     def send_message(sock, message):
+        """
+        Метод отправляющий сообщение message в передаваемый объект сокета.
+        :sock: (socket.socket) объект сокета для отправки сообщения.
+        :message: (dict) передаваемое сообщение.
+        """
         message = json.dumps(message).encode(ENCODING)
         sock.send(message)
 
     @staticmethod
     def template_message(**kwargs):
+        """
+        Метод формирующий шаблон сообщения из передаваемых ключевых аргументов.
+        :return: (dict) возвращает словарь сообщения.
+        """
         message = {"time": time.time()}
         for key, value in kwargs.items():
             message[key] = value
@@ -73,4 +92,8 @@ class Chat:
 
     @property
     def get_error(self):
+        """
+        Метод, возвращающий случайное сообщение об ошибке.
+        :return: (str) cтрока сообщения об ошибке.
+        """
         return random.choice(ERRORS)
