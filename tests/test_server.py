@@ -7,7 +7,7 @@ from socket import socket
 sys.path.append(os.getcwd())
 
 from config.settigs import DEFAULT_PORT
-from server_app import Server
+from server_app.core import Server
 
 
 TEST_PORT = 5000

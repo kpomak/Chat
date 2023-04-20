@@ -1,3 +1,6 @@
+"""
+Модуль, содержащий общие утилиты для клиентской и серверной частей приложения.
+"""
 import json
 import time
 import random
@@ -8,7 +11,18 @@ from config.settigs import MAX_PACKAGE_LENGTH, ENCODING, ERRORS, VERIFICATION_PA
 
 
 class BaseVerifier(type):
+    """
+    Метакласс проверяющий, что будет установлено исключительно TCP подкючение
+
+    """
+
     def __init__(cls, name, bases, namespaces):
+        """
+        Магический метод возвращающий объект класса BaseVerifier
+        :name:
+        :bases:
+        :namespase:
+        """
         super().__init__(name, bases, namespaces)
 
         arguments = []

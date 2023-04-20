@@ -8,8 +8,8 @@ from socket import socket
 sys.path.append(os.getcwd())
 
 from config.settigs import DEFAULT_PORT
-from client_app import Client
-from server_app import Server
+from client_app.core import Client
+from server_app.core import Server
 
 TEST_PORT = 5000
 TEST_IP = "127.0.0.1"
