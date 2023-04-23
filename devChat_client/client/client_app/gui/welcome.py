@@ -24,6 +24,7 @@ class UiDialog(QtWidgets.QDialog):
         self.lineEdit_2 = QtWidgets.QLineEdit(self)
         self.lineEdit_2.setGeometry(QtCore.QRect(20, 80, 261, 25))
         self.lineEdit_2.setObjectName("lineEdit_2")
+        self.lineEdit_2.setEchoMode(QtWidgets.QLineEdit.EchoMode.Password)
         self.pushButton_2 = QtWidgets.QPushButton(self)
         self.pushButton_2.setGeometry(QtCore.QRect(158, 120, 121, 25))
         self.pushButton_2.setObjectName("pushButton_2")
